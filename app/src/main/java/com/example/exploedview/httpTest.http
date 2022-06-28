@@ -1,0 +1,44 @@
+#POST https://2020capi.census.go.kr/mCAPI/and2020/gis/getFeatures.do
+#Content-Type: application/json;charset=utf-8
+#
+#{
+#  "CI_GRP_ID": 2 ,
+#  "SESSION-EMRT": "Y" ,
+#  "SESSION-EMRTUSRGRPID": 39056 ,
+#  "SESSION-EMRTUSRID": "UM@00013" ,
+#  "SESSION-EMRTUSRNM": "테스트1" ,
+#  "SESSION-WP_CDW_CD": "050" ,
+#  "SESSION-WP_CP_CD": 99 ,
+#  "SURV_ID": 39 ,
+#  "ciGrpId": 2 ,
+#  "deviceSn": 498673018 ,
+#  "deviceType": "T" ,
+#  "device_sn": 498673018 ,
+#  "device_type": "T" ,
+#  "emrtIs": "Y" ,
+#  "emrtUsrId": "UM@00013" ,
+#  "emrt_usr_id": "UM@00013" ,
+#  "osType": "LIX" ,
+#  "pEmrtIs": "Y" ,
+#  "sSuperKostatAdminYn": "N" ,
+#  "superUsrYn": "N" ,
+#  "survDivcCd": 1 ,
+#  "survId": 39 ,
+#  "survMthdCd": 2 ,
+#  "surv_mthd_cd": 2 ,
+#  "sysDiv": "fSurvId" ,
+#  "usr080": "N" ,
+#  "usrId": "UM@00013",
+#  "reqLayer": "adm_cd_apt_no",
+#  "cqlFilter" : "bd_mgt_sn='4719011000100020000029000 AND delete_yn <> Y AND adm_cd='9905051' AND surv_id='39'"
+#//  '4719011000100020000029000'+AND+delete_yn+<>+'Y'+AND+adm_cd='9905051'+AND+surv_id='39'
+#
+#}
+
+#GET https://2020capi.census.go.kr/mCAPI/and2020/home/selectAppVersion.do
+
+POST  https://2020capi.census.go.kr/mCAPI/and2020/gis/getFeatures.do?CI_GRP_ID=2&SESSION-EMRT=Y&SESSION-EMRTUSRGRPID=39056&SESSION-EMRTUSRID=UM@00013&SESSION-EMRTUSRNM=테스트1&SESSION-WP_CDW_CD=050&SESSION-WP_CP_CD=99&SURV_ID=39&ciGrpId=2&deviceSn=498673018&deviceType=T&device_sn=498673018&device_type=T&emrtIs=Y&emrtUsrId=UM@00013&emrt_usr_id=UM@00013&osType=LIX&pEmrtIs=Y&sSuperKostatAdminYn=N&superUsrYn=N&survDivcCd=1&survId=39&survMthdCd=2&surv_mthd_cd=2&sysDiv=fSurvId&usr080=N&usrId=UM@00013
+
+
+
+
