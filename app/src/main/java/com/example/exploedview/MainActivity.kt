@@ -4,17 +4,19 @@ import android.util.Log
 import com.carto.components.Options
 import com.carto.core.MapPos
 import com.carto.core.MapPosVector
-import com.carto.core.MapPosVectorVector
 import com.carto.core.MapRange
 import com.carto.datasources.LocalVectorDataSource
 import com.carto.graphics.Color
-import com.carto.layers.VectorLayer
+import com.carto.layers.EditableVectorLayer
 import com.carto.projections.Projection
 import com.carto.styles.*
 import com.carto.ui.MapView
 import com.carto.vectorelements.Polygon
 import com.carto.vectorelements.Text
 import com.example.exploedview.databinding.ActivityMainBinding
+import com.example.exploedview.listener.EditEventListener
+import com.example.exploedview.listener.VectorElementDeselectListener
+import com.example.exploedview.listener.VectorElementSelectEventListener
 
 
 class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
@@ -29,7 +31,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     private var _lineStyleBuilder: LineStyleBuilder? = null
     private var _textStyleBuilder: TextStyleBuilder? = null
 
-    private var _vecotrLayer: VectorLayer? = null
+    private var _vecotrLayer: EditableVectorLayer? = null
 
     private var _codeArr = mutableListOf<String>()
     private var _posVectorArr = mutableListOf<MapPosVector>()
@@ -37,10 +39,18 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     private var _labelHoNmArr = mutableListOf<String>()
     private var _labelHuNumArr = mutableListOf<String>()
     private var _labelCpoedTxtArr = mutableListOf<String>()
+    private var _makePolygonArr = mutableListOf<Polygon>()
+
+
+    private var _editEventListener: EditEventListener? = null
+    private var _selectListener: VectorElementSelectEventListener? = null
+    private var _deselectListener: VectorElementDeselectListener? = null
 
     override fun initView() {
         super.initView()
+
         binding.apply {
+
             _mapView = binding.cartoMapView
             _mapOpt = _mapView?.options
             _proj = _mapOpt?.baseProjection
@@ -55,8 +65,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
             _localVectorDataSource = LocalVectorDataSource(_proj)
 
-            _mapView?.setZoom(22.toFloat(), 0.5f)
-            _mapView?.setFocusPos(MapPos(10.0001, 7.5), 0.5f)
+            setInitZoomAndPos(22F, MapPos(10.0001, 7.5), 0.5F)
 
             try {
                 val tempDataStr =
@@ -65,6 +74,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
                 val getFeatures = parseJson.get("features").asJsonArray
                 for (i in 0 until getFeatures.size()) {
+
                     _codeArr.add(getFeatures.get(i).asJsonObject.get("geometry").asJsonObject.get("coordinates").asJsonArray.get(0).asJsonArray.get(0).asJsonArray.toString())
 
                     val properties = getFeatures.get(i).asJsonObject.get("properties").asJsonObject
@@ -76,8 +86,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
                     _labelHuNumArr.add(huNum)
                     _labelCpoedTxtArr.add(cPoedTxt)
 
-                    Log.d("imchic", "properties :: $properties")
-                    Log.d("imchic", "hoNm :: $hoNm, huNum :: $huNum, c_poed_txt :: $cPoedTxt")
+//                    Log.d("imchic", "properties :: $properties")
+//                    Log.d("imchic", "hoNm :: $hoNm, huNum :: $huNum, c_poed_txt :: $cPoedTxt")
 
                 }
 
@@ -109,49 +119,88 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
             _posVectorArr.forEachIndexed { idx, pos ->
 
-                _polygonStyleBuilder = PolygonStyleBuilder()
-                _polygonStyleBuilder?.color = Color(255, 255, 0, 255)
-                _lineStyleBuilder = LineStyleBuilder()
-                _lineStyleBuilder?.color = Color(0, 0, 0, 255)
-                _lineStyleBuilder?.width = 2F
-                _polygonStyleBuilder?.lineStyle = _lineStyleBuilder?.buildStyle()
-
-                val ply = Polygon(pos, _polygonStyleBuilder?.buildStyle())
+                val polygon = Polygon(pos, setPolygonStyle(Color(255, 255, 0, 255), Color(0, 0, 0, 255), 2F))
                 val minusNum = 1.8
 
-                val centerPos = MapPos(ply.geometry.centerPos.x, ply.geometry.centerPos.y + minusNum)
+                _makePolygonArr.add(polygon)
+
+                val centerPos = MapPos(polygon.geometry.centerPos.x, polygon.geometry.centerPos.y + minusNum)
                 val middlePos = MapPos(centerPos.x, centerPos.y - minusNum)
                 val botPos = MapPos(middlePos.x, middlePos.y - minusNum)
 
-                Log.d("imchic", "center :: ${centerPos.x}, ${centerPos.y}")
-                Log.d("imchic", "middle :: ${middlePos.x}, ${middlePos.y}")
-                Log.d("imchic", "bot :: ${botPos.x}, ${botPos.y}")
+//                Log.d("imchic", "center :: ${centerPos.x}, ${centerPos.y}")
+//                Log.d("imchic", "middle :: ${middlePos.x}, ${middlePos.y}")
+//                Log.d("imchic", "bot :: ${botPos.x}, ${botPos.y}")
 
                 val hoNmTxt = Text(centerPos, setTextStyle(Color(0, 0, 0, 255), 30F), _labelHoNmArr[idx])
-                val huNumTxt = Text(middlePos, setTextStyle(Color(255, 0, 0, 255), 30F), _labelHuNumArr[idx])
+                val huNumTxt = Text(middlePos, setTextStyle(Color(255, 0, 0, 255), 32F), _labelHuNumArr[idx])
                 val cPoedTxt = Text(botPos, setTextStyle(Color(0, 0, 0, 255), 30F), _labelCpoedTxtArr[idx])
+
 
                 _localVectorDataSource?.apply {
                     add(hoNmTxt)
                     add(huNumTxt)
                     add(cPoedTxt)
-                    add(ply)
+                    add(polygon)
                 }
 
-                _vecotrLayer = VectorLayer(_localVectorDataSource)
+                _vecotrLayer = EditableVectorLayer(_localVectorDataSource)
+                _editEventListener = EditEventListener()
+
+                _vecotrLayer?.apply {
+                    vectorEditEventListener = _editEventListener
+                    vectorElementEventListener = _selectListener
+                }
+
+                _selectListener = VectorElementSelectEventListener(this@MainActivity)
+                _deselectListener = VectorElementDeselectListener(_vecotrLayer)
+
                 _mapView?.layers?.add(_vecotrLayer)
+
 
             }
 
         }
     }
 
-    fun setTextStyle(color: Color, fontSize: Float): TextStyle? {
+    private fun setInitZoomAndPos(zoom: Float, pos: MapPos, duration: Float) {
+        _mapView?.setZoom(zoom, duration)
+        _mapView?.setFocusPos(pos, duration)
+    }
+
+    private fun setTextStyle(color: Color, fontSize: Float): TextStyle? {
         _textStyleBuilder = TextStyleBuilder()
         _textStyleBuilder?.color = color
         _textStyleBuilder?.fontSize = fontSize
-        _textStyleBuilder?.orientationMode = BillboardOrientation.BILLBOARD_ORIENTATION_FACE_CAMERA
+        _textStyleBuilder?.orientationMode = BillboardOrientation.BILLBOARD_ORIENTATION_FACE_CAMERA_GROUND
         _textStyleBuilder?.isScaleWithDPI = false
+
         return _textStyleBuilder?.buildStyle()
     }
+
+    private fun setPolygonStyle(polygonColor: Color, lineColor:Color, lineWidth: Float): PolygonStyle? {
+        _polygonStyleBuilder = PolygonStyleBuilder()
+        _polygonStyleBuilder?.color = polygonColor
+        _lineStyleBuilder = LineStyleBuilder()
+        _lineStyleBuilder?.color = lineColor
+        _lineStyleBuilder?.width = lineWidth
+        _polygonStyleBuilder?.lineStyle = _lineStyleBuilder?.buildStyle()
+        return _polygonStyleBuilder?.buildStyle()
+    }
+
+    fun togglePolygonStyle(type: String, mapPos: MapPos){
+
+        _makePolygonArr.forEach { data ->
+            if(data.geometry.centerPos == mapPos){
+
+                when(type){
+                    "select" -> data.style = setPolygonStyle(Color(255, 123, 0, 255), Color(0, 0, 0, 255), 2F)
+                    "deselect" -> data.style = setPolygonStyle(Color(255, 255, 0, 255), Color(0, 0, 0, 255), 2F)
+                }
+            }
+        }
+
+        Log.d("imchic", "response => $mapPos")
+    }
+
 }
