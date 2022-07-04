@@ -1,5 +1,7 @@
 package com.example.exploedview.listener
 
+import android.util.Log
+import com.carto.core.MapBounds
 import com.carto.geometry.Geometry
 import com.carto.geometry.LineGeometry
 import com.carto.geometry.PointGeometry
@@ -15,14 +17,21 @@ import com.carto.vectorelements.Line
 import com.carto.vectorelements.Point
 import com.carto.vectorelements.Polygon
 import com.carto.vectorelements.VectorElement
+import com.example.exploedview.MainActivity
 
-class EditEventListener : VectorEditEventListener() {
+class EditEventListener(private val activity: MainActivity) : VectorEditEventListener() {
 
     private var styleNormal: PointStyle? = null
     private var styleVirtual: PointStyle? = null
     private var styleSelected: PointStyle? = null
 
+    private var _modifyElementBoudns: MapBounds? = null
+    private var _withinPolygonArr: MutableList<Polygon>? = null
+
     override fun onElementModify(element: VectorElement?, geometry: Geometry?) {
+
+        _modifyElementBoudns = MapBounds()
+        _withinPolygonArr = mutableListOf()
 
         when (element) {
             is Point -> {
@@ -33,8 +42,29 @@ class EditEventListener : VectorEditEventListener() {
             }
             is Polygon -> {
                 element.geometry = geometry as PolygonGeometry
+
+                for (i in 0 until element.geometry.poses.size()) {
+                    Log.d("imchic", element.geometry.poses.get(i.toInt()).toString())
+                }
+
             }
         }
+
+        _modifyElementBoudns = element?.bounds
+//        Log.d("imchic", _modifyElementBoudns.toString())
+
+        activity.makePolygonArr.forEach {poly ->
+           val withinPoly = _modifyElementBoudns?.contains(poly.bounds)
+//            Log.d("imchic", withinPoly.toString())
+
+            if(withinPoly == true){
+                _withinPolygonArr?.add(poly)
+            }
+
+        }
+
+        // 그룹영역에 포함된 Polygon 배열
+        Log.d("imchic", "포함된 Polygon => ${_withinPolygonArr.toString()}")
 
 
     }
@@ -68,7 +98,7 @@ class EditEventListener : VectorEditEventListener() {
             styleNormal = builder.buildStyle()
             builder.size = 15f
             styleVirtual = builder.buildStyle()
-            builder.color = Color(100, 100, 0 , 255)
+            builder.color = Color(255, 0, 0 , 255)
             builder.size = 15f
             styleSelected = builder.buildStyle()
         }

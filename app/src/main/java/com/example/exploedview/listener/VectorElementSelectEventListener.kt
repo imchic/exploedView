@@ -2,12 +2,13 @@ package com.example.exploedview.listener
 
 import android.util.Log
 import com.carto.core.MapPos
+import com.carto.layers.EditableVectorLayer
 import com.carto.layers.VectorElementEventListener
 import com.carto.ui.VectorElementClickInfo
 import com.carto.vectorelements.Text
 import com.example.exploedview.MainActivity
 
-class VectorElementSelectEventListener(val mainActivity: MainActivity) :
+class VectorElementSelectEventListener(private val activity: MainActivity, val layer: EditableVectorLayer?) :
     VectorElementEventListener() {
 
     private val _selectElementArr = mutableListOf<MapPos>()
@@ -18,6 +19,8 @@ class VectorElementSelectEventListener(val mainActivity: MainActivity) :
     }
 
     private fun select(element: VectorElementClickInfo) {
+
+        layer?.selectedVectorElement = element.vectorElement
 
         val centerPos = element.vectorElement.geometry.centerPos
 
@@ -32,17 +35,17 @@ class VectorElementSelectEventListener(val mainActivity: MainActivity) :
                     // 신규
                     if (isEmpty()) {
                         add(centerPos)
-                        mainActivity.togglePolygonStyle("select", centerPos)
+                        activity.togglePolygonStyle("select", centerPos)
 
                     // 중복
                     } else {
                         if (!contains(centerPos)) {
                             add(centerPos)
-                            mainActivity.togglePolygonStyle("select", centerPos)
+                            activity.togglePolygonStyle("select", centerPos)
 
                         } else {
                             remove(centerPos)
-                            mainActivity.togglePolygonStyle("deselect", centerPos)
+                            activity.togglePolygonStyle("deselect", centerPos)
 
                         }
                     }
