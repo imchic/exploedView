@@ -6,12 +6,12 @@ import androidx.annotation.LayoutRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
-import com.carto.geometry.GeoJSONGeometryReader
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 
-abstract class BaseActivity<T: ViewDataBinding>
-    (@LayoutRes private val layoutId: Int): AppCompatActivity() {
+
+abstract class BaseActivity<T : ViewDataBinding>
+    (@LayoutRes private val layoutId: Int) : AppCompatActivity() {
 
     protected lateinit var binding: T
 
@@ -20,6 +20,8 @@ abstract class BaseActivity<T: ViewDataBinding>
 
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, layoutId)
+
+        this.supportActionBar?.hide()
 
         initView()
         initViewModel()
@@ -33,18 +35,8 @@ abstract class BaseActivity<T: ViewDataBinding>
     protected open fun initListener() {}
     protected open fun afterOnCreate() {}
 
-
     fun getToast(str: String?) = Toast.makeText(this, str, Toast.LENGTH_SHORT).show()
 
-    fun httpResultToJsonObject(resultStr: String): JsonObject {
-        return JsonParser.parseString(resultStr).asJsonObject
-    }
-
-
-    fun getJsonDataFromAsset(jsonStr: String): String = assets.open(jsonStr).bufferedReader().use { it.readText() }
-
-//    fun getReadGeometry(geoJson: String){
-//        GeoJSONGeometryReader().readFeature(geoJson)
-//    }
+    fun httpResultToJsonObject(resultStr: String): JsonObject = JsonParser.parseString(resultStr).asJsonObject
 
 }

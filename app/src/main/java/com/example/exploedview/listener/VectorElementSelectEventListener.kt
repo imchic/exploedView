@@ -14,7 +14,9 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
     private val _selectElementArr = mutableListOf<MapPos>()
 
     override fun onVectorElementClicked(clickInfo: VectorElementClickInfo): Boolean {
-        select(clickInfo)
+        if(activity.selectToggle){
+            select(clickInfo)
+        }
         return true
     }
 
@@ -26,10 +28,10 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
 
         when (element.vectorElement) {
             is Text -> {
-                Log.d("imchic", "vectorElement Type => Text")
+                activity.utils.logD("vectorElement Type => Text")
             }
             else -> {
-                Log.d("imchic", "vectorElement Type => EditableLayer")
+                activity.utils.logD("vectorElement Type => EditableLayer")
 
                 _selectElementArr.apply {
                     // 신규
@@ -59,7 +61,7 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
 
 
     private fun getSelectElementArr(): List<MapPos> {
-        Log.d("imchic", "최종 배열 => $_selectElementArr [${_selectElementArr.size}]")
+        activity.utils.logD("최종 배열 => $_selectElementArr [${_selectElementArr.size}]")
         return _selectElementArr
     }
 

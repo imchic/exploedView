@@ -26,12 +26,11 @@ class EditEventListener(private val activity: MainActivity) : VectorEditEventLis
     private var styleSelected: PointStyle? = null
 
     private var _modifyElementBoudns: MapBounds? = null
-    private var _withinPolygonArr: MutableList<Polygon>? = null
+    var withinPolygonArr: MutableList<Polygon>? = null
 
     override fun onElementModify(element: VectorElement?, geometry: Geometry?) {
 
         _modifyElementBoudns = MapBounds()
-        _withinPolygonArr = mutableListOf()
 
         when (element) {
             is Point -> {
@@ -43,29 +42,21 @@ class EditEventListener(private val activity: MainActivity) : VectorEditEventLis
             is Polygon -> {
                 element.geometry = geometry as PolygonGeometry
 
-                for (i in 0 until element.geometry.poses.size()) {
-                    Log.d("imchic", element.geometry.poses.get(i.toInt()).toString())
-                }
+                withinPolygonArr = mutableListOf()
+                _modifyElementBoudns = element.bounds
 
             }
         }
 
-        _modifyElementBoudns = element?.bounds
-//        Log.d("imchic", _modifyElementBoudns.toString())
-
         activity.makePolygonArr.forEach {poly ->
-           val withinPoly = _modifyElementBoudns?.contains(poly.bounds)
-//            Log.d("imchic", withinPoly.toString())
-
-            if(withinPoly == true){
-                _withinPolygonArr?.add(poly)
-            }
-
+            val withinPoly = _modifyElementBoudns?.contains(poly.bounds)
+            activity.utils.logI(withinPoly.toString())
+            if(withinPoly == true) withinPolygonArr?.add(poly)
         }
 
         // 그룹영역에 포함된 Polygon 배열
-        Log.d("imchic", "포함된 Polygon => ${_withinPolygonArr.toString()}")
-
+        activity.utils.logI("포함된 Polygon => ${withinPolygonArr.toString()}")
+        activity._areaButton.isEnabled = true
 
     }
 

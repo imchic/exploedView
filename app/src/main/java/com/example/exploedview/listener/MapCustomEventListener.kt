@@ -8,19 +8,19 @@ import com.example.exploedview.MainActivity
 
 class MapCustomEventListener(private val activity: MainActivity) : MapEventListener() {
 
-    private var _groupMapPosArr = mutableListOf<MapPos>()
+    var groupMapPosArr = mutableListOf<MapPos>()
 
     override fun onMapClicked(mapClickInfo: MapClickInfo?) {
         super.onMapClicked(mapClickInfo)
 
         when(mapClickInfo?.clickType){
             ClickType.CLICK_TYPE_SINGLE -> {
-                _groupMapPosArr.add(mapClickInfo.clickPos)
+                groupMapPosArr.add(mapClickInfo.clickPos)
             }
             else -> null
         }
 
-        activity.drawGroupBoundaryLayer(_groupMapPosArr)
+        activity.drawGroupBoundaryLayer(groupMapPosArr)
     }
 
 }

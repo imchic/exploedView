@@ -1,16 +1,19 @@
 package com.example.exploedview
 
-import android.util.Log
+import android.widget.Button
 import com.carto.components.Options
+import com.carto.core.MapBounds
 import com.carto.core.MapPos
 import com.carto.core.MapPosVector
 import com.carto.core.MapRange
 import com.carto.datasources.LocalVectorDataSource
 import com.carto.graphics.Color
 import com.carto.layers.EditableVectorLayer
+import com.carto.layers.VectorLayer
 import com.carto.projections.Projection
 import com.carto.styles.*
 import com.carto.ui.MapView
+import com.carto.vectorelements.Line
 import com.carto.vectorelements.Point
 import com.carto.vectorelements.Polygon
 import com.carto.vectorelements.Text
@@ -19,37 +22,53 @@ import com.example.exploedview.listener.EditEventListener
 import com.example.exploedview.listener.MapCustomEventListener
 import com.example.exploedview.listener.VectorElementDeselectListener
 import com.example.exploedview.listener.VectorElementSelectEventListener
+import java.util.Collections
 
 
 class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
-    private var _mapView: MapView? = null
-    private var _mapOpt: Options? = null
-    private var _proj: Projection? = null
+    val utils: Utils by lazy { Utils(localClassName) }
 
+    private val _restButton: Button by lazy { binding.btnReset }
+    private val _copyButton: Button by lazy { binding.btnCopy }
+    private val _selectButton: Button by lazy { binding.btnSelect }
+    private val _groupButton: Button by lazy { binding.btnGroup }
+
+    val _areaButton: Button by lazy { binding.btnArea }
+
+    var selectToggle: Boolean = false
+
+    private lateinit var _mapView: MapView
+    private lateinit var _mapOpt: Options
+
+    private lateinit var _proj: Projection
     private var _localVectorDataSource: LocalVectorDataSource? = null
-    private var _groupLocalVectorDataSource: LocalVectorDataSource? = null
+    private var _copyVectorDataSource: LocalVectorDataSource? = null
 
+    private var _groupLocalVectorDataSource: LocalVectorDataSource? = null
     private var _posVector: MapPosVector? = null
     private var _pointStyleBuilder: PointStyleBuilder? = null
     private var _lineStyleBuilder: LineStyleBuilder? = null
     private var _polygonStyleBuilder: PolygonStyleBuilder? = null
+
     private var _textStyleBuilder: TextStyleBuilder? = null
-
     private var _vecotrLayer: EditableVectorLayer? = null
+
     private var _groupVecotrLayer: EditableVectorLayer? = null
-
+    private var _copyVecotrLayer: VectorLayer? = null
     private var _codeArr = mutableListOf<String>()
-    private var _posVectorArr = mutableListOf<MapPosVector>()
+    private var _pointGroupVertaxArr = mutableListOf<MapPos>()
 
+    private var _posVectorArr = mutableListOf<MapPosVector>()
     private var _labelHoNmArr = mutableListOf<String>()
     private var _labelHuNumArr = mutableListOf<String>()
     private var _labelCpoedTxtArr = mutableListOf<String>()
-    var makePolygonArr = mutableListOf<Polygon>()
 
+    var makePolygonArr = mutableListOf<Polygon>()
     private var _mapCustomEventListener: MapCustomEventListener? = null
     private var _editEventListener: EditEventListener? = null
     private var _selectListener: VectorElementSelectEventListener? = null
+
     private var _deselectListener: VectorElementDeselectListener? = null
 
     override fun initView() {
@@ -64,12 +83,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
     private fun initMapView() {
         _mapView = binding.cartoMapView
-        _mapOpt = _mapView?.options
-        _proj = _mapOpt?.baseProjection
+        _mapOpt = _mapView.options
+        _proj = _mapOpt.baseProjection
         _mapCustomEventListener = MapCustomEventListener(this@MainActivity)
 
         // 맵 옵션
-        _mapOpt?.apply {
+        _mapOpt.apply {
             tiltRange = MapRange(90f, 90f) // 틸트 고정
             isRotatable = false // 회전
             isZoomGestures = false
@@ -77,8 +96,170 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
         }
 
         _localVectorDataSource = LocalVectorDataSource(_proj)
+
+        /**
+         * 그룹 바운더리 영역 생성
+         */
+        _groupButton.setOnClickListener {
+
+            removeLayer()
+
+            when (_pointGroupVertaxArr.size) {
+
+                // 포인트
+                1 -> {
+                    for (pos in _pointGroupVertaxArr) {
+                        val pointGroupSymbol = Point(pos, setPointStyle(Color(0, 0, 255, 255), 13F))
+                        _groupLocalVectorDataSource?.add(pointGroupSymbol)
+                    }
+                }
+
+                // 라인
+                2 -> {
+                    val groupLineMapPosVector = MapPosVector()
+                    for(pos in _pointGroupVertaxArr) {
+                        groupLineMapPosVector.add(pos)
+                    }
+                    val lineGroupSymbol = Line(groupLineMapPosVector, setLineStyle(Color(0, 0, 255, 255), LineJoinType.LINE_JOIN_TYPE_ROUND, 8F))
+//                    lineGroupSymbol.setMetaDataElement("ClickText", Variant("Line nr 1"))
+                    _groupLocalVectorDataSource?.add(lineGroupSymbol)
+                }
+
+                // 폴리곤
+                else -> {
+                    val groupPolygonMapPosVector = MapPosVector()
+                    for(pos in _pointGroupVertaxArr) {
+                        groupPolygonMapPosVector.add(pos)
+                    }
+                    val polygonGroupSymbol = Polygon(groupPolygonMapPosVector, setPolygonStyle(Color(0, 0, 255, 30), Color(0, 0, 255, 255), 2F))
+                    _groupLocalVectorDataSource?.add(polygonGroupSymbol)
+                }
+
+            }
+
+            _groupVecotrLayer = EditableVectorLayer(_groupLocalVectorDataSource)
+            _selectListener = VectorElementSelectEventListener(this@MainActivity, _groupVecotrLayer)
+
+            _groupVecotrLayer?.run {
+                vectorEditEventListener = _editEventListener
+                vectorElementEventListener = _selectListener
+            }
+
+            _mapView.layers?.add(_groupVecotrLayer)
+
+            it.isEnabled = false
+
+            selectToggle = true
+            _selectButton.isEnabled = false
+
+        }
+
+        _selectButton.setOnClickListener {
+            selectToggle = !selectToggle
+
+            if(selectToggle){
+                getToast("선택모드")
+            } else {
+                getToast("비선택모드")
+                setDefaultLayerStyle()
+            }
+
+            utils.logI(selectToggle.toString())
+        }
+
+        /**
+         * 그룹 바운더리 영역 삭제 (초기화)
+         */
+        _restButton.setOnClickListener {
+            removeLayer()
+            setDefaultLayerStyle()
+            getToast("초기화를 헀습니다.")
+        }
+
+        /**
+         * 그룹영역 내 선택된 객체 가져오기
+         */
+        _areaButton.setOnClickListener {
+
+            makePolygonArr.map { poly ->
+
+                val flag: Boolean? = _editEventListener?.withinPolygonArr?.contains(poly)
+
+                if(flag == true){
+                    poly.style = setPolygonStyle(Color(0, 255,0,30), Color(0, 255,0,255), 2F)
+                }
+            }
+
+            removeLayer()
+
+        }
+
+        _copyButton.setOnClickListener {
+
+            _copyVectorDataSource = LocalVectorDataSource(_proj)
+
+            val getMaxVal = arrayListOf<Int>()
+
+            makePolygonArr.map { getMaxVal.add(it.bounds.max.y.toInt()) /* 최대값 구하기*/ }
+
+            val resultMaxValue: Double = Collections.max(getMaxVal).toDouble()
+            val filterArr = makePolygonArr.filter { it.bounds.max.y == resultMaxValue }
+
+
+            filterArr.map {
+                utils.logI("기존 : ${it.bounds}") // 최대값이 포함된 MapBounds
+
+                val tmpMinMapPos = MapPos(it.bounds.min.x, it.bounds.min.y)
+                val tmpMaxMapPos = MapPos(it.bounds.max.x, it.bounds.max.y)
+
+//                utils.logI("tmpMinMapPos : $tmpMinMapPos") // 최소값 포함된 MapBounds
+//                utils.logI("tmpMaxMapPos : $tmpMaxMapPos") // 최대값이 포함된 MapBounds
+
+                val tmpMapBounds = MapBounds(MapPos(tmpMinMapPos.x, tmpMinMapPos.y + 8), MapPos(tmpMaxMapPos.x, tmpMaxMapPos.y + 8))
+                utils.logI("tmpMapBounds : $tmpMapBounds")
+
+                val vector = MapPosVector()
+                vector.add(tmpMinMapPos)
+                vector.add(tmpMaxMapPos)
+
+                val copyPoly = Polygon(vector, setPolygonStyle(Color(255, 0, 0, 255), Color(0, 0, 0, 255), 2F))
+                _copyVectorDataSource?.add(copyPoly)
+            }
+
+            _copyVecotrLayer = VectorLayer(_copyVectorDataSource)
+            _mapView.layers.add(_copyVecotrLayer)
+
+        }
     }
 
+    private fun setDefaultLayerStyle() {
+        makePolygonArr.map { data -> data.style = setPolygonStyle(Color(255, 255, 0, 255), Color(0, 0, 0, 255), 2F) }
+    }
+
+    /**
+     * 그룹 지정 레이어 초기화
+     */
+    private fun removeLayer() {
+        _mapCustomEventListener?.groupMapPosArr?.clear()
+        _mapView.layers.remove(_mapView.layers.get(_mapView.layers.count() -1))
+
+        _groupLocalVectorDataSource?.clear()
+
+        _groupButton.isEnabled = false
+        _areaButton.isEnabled = false
+        _selectButton.isEnabled = true
+
+    }
+
+    /**
+     * 레이어의 갯수
+     * @return Int
+     */
+    private fun getLayerCount() : Int = _mapView.layers.count()
+
+    /**
+     * 전개도 레이어 표출
+     */
     private fun drawExploedLayer() {
         try {
             val tempDataStr =
@@ -103,12 +284,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
                 _labelHuNumArr.add(huNum)
                 _labelCpoedTxtArr.add(cPoedTxt)
 
-    //                    Log.d("imchic", "properties :: $properties")
-    //                    Log.d("imchic", "hoNm :: $hoNm, huNum :: $huNum, c_poed_txt :: $cPoedTxt")
             }
 
         } catch (e: Exception) {
-            Log.e("imchic", e.toString())
+            utils.logI(e.toString())
         }
 
         _posVectorArr = mutableListOf()
@@ -135,7 +314,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
         _posVectorArr.forEachIndexed { idx, pos ->
 
-            val polygon = Polygon(pos, setPolygonStyle(Color(255, 255, 0, 255), Color(0, 0, 0, 255), 2F))
+            val polygon = Polygon(pos, setPolygonStyle(Color(255, 255, 0, 10), Color(0, 0, 0, 255), 2F))
             val minusNum = 1.8
 
             makePolygonArr.add(polygon)
@@ -143,10 +322,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             val centerPos = MapPos(polygon.geometry.centerPos.x, polygon.geometry.centerPos.y + minusNum)
             val middlePos = MapPos(centerPos.x, centerPos.y - minusNum)
             val botPos = MapPos(middlePos.x, middlePos.y - minusNum)
-
-    //                Log.d("imchic", "center :: ${centerPos.x}, ${centerPos.y}")
-    //                Log.d("imchic", "middle :: ${middlePos.x}, ${middlePos.y}")
-    //                Log.d("imchic", "bot :: ${botPos.x}, ${botPos.y}")
 
             val hoNmTxt = Text(centerPos, setTextStyle(Color(0, 0, 0, 255), 30F), _labelHoNmArr[idx])
             val huNumTxt = Text(middlePos, setTextStyle(Color(255, 0, 0, 255), 32F), _labelHuNumArr[idx])
@@ -170,17 +345,29 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             _selectListener = VectorElementSelectEventListener(this@MainActivity, null)
             _deselectListener = VectorElementDeselectListener(_vecotrLayer)
 
-            _mapView?.layers?.add(_vecotrLayer)
-            _mapView?.mapEventListener = _mapCustomEventListener
+            _mapView.layers?.add(_vecotrLayer)
+            _mapView.mapEventListener = _mapCustomEventListener
 
         }
     }
 
+    /**
+     * 최초 줌 지정 및 위치 지정
+     * @param zoom Float
+     * @param pos MapPos
+     * @param duration Float
+     */
     private fun setInitZoomAndPos(zoom: Float, pos: MapPos, duration: Float) {
-        _mapView?.setZoom(zoom, duration)
-        _mapView?.setFocusPos(pos, duration)
+        _mapView.setZoom(zoom, duration)
+        _mapView.setFocusPos(pos, duration)
     }
 
+    /**
+     * 벡터 포인트 스타일
+     * @param color Color
+     * @param size Float
+     * @return PointStyle?
+     */
     private fun setPointStyle(color: Color, size: Float): PointStyle? {
         _pointStyleBuilder = PointStyleBuilder()
         _pointStyleBuilder?.color = color
@@ -188,6 +375,27 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
         return _pointStyleBuilder?.buildStyle()
     }
 
+    /**
+     * 벡터 라인 스타일
+     * @param color Color
+     * @param type LineJoinType
+     * @param width Float
+     * @return LineStyle?
+     */
+    private fun setLineStyle(color: Color, type: LineJoinType, width: Float): LineStyle? {
+        _lineStyleBuilder = LineStyleBuilder()
+        _lineStyleBuilder?.color = color
+        _lineStyleBuilder?.lineJoinType = type
+        _lineStyleBuilder?.width = width
+        return _lineStyleBuilder?.buildStyle()
+    }
+
+    /**
+     * 벡터 텍스트 스타일
+     * @param color Color
+     * @param fontSize Float
+     * @return TextStyle?
+     */
     private fun setTextStyle(color: Color, fontSize: Float): TextStyle? {
         _textStyleBuilder = TextStyleBuilder()
         _textStyleBuilder?.color = color
@@ -198,7 +406,14 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
         return _textStyleBuilder?.buildStyle()
     }
 
-    private fun setPolygonStyle(polygonColor: Color, lineColor:Color, lineWidth: Float): PolygonStyle? {
+    /**
+     * 벡터 폴리곤 스타일
+     * @param polygonColor Color
+     * @param lineColor Color
+     * @param lineWidth Float
+     * @return PolygonStyle?
+     */
+    private fun setPolygonStyle(polygonColor: Color, lineColor: Color, lineWidth: Float): PolygonStyle? {
         _polygonStyleBuilder = PolygonStyleBuilder()
         _polygonStyleBuilder?.color = polygonColor
         _lineStyleBuilder = LineStyleBuilder()
@@ -208,70 +423,59 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
         return _polygonStyleBuilder?.buildStyle()
     }
 
-    fun togglePolygonStyle(type: String, mapPos: MapPos){
+    /**
+     * 폴리곤 선택, 비선택 모듈
+     * @param type String
+     * @param mapPos MapPos
+     */
+    fun togglePolygonStyle(type: String, mapPos: MapPos) {
 
         makePolygonArr.forEach { data ->
-            if(data.geometry.centerPos == mapPos){
+            if (data.geometry.centerPos == mapPos) {
 
-                when(type){
+                when (type) {
                     "select" -> data.style = setPolygonStyle(Color(255, 123, 0, 255), Color(0, 0, 0, 255), 2F)
                     "deselect" -> data.style = setPolygonStyle(Color(255, 255, 0, 255), Color(0, 0, 0, 255), 2F)
                 }
             }
         }
 
-        Log.d("imchic", "response => $mapPos")
+        utils.logI("response => $mapPos")
     }
 
-    fun drawGroupBoundaryLayer(mapPosArr: MutableList<MapPos>) {
-        Log.d("imchic", mapPosArr.toString())
 
-        var groupPoint: Point?
-        val groupPolygon: Polygon?
-        val groupPolygonMapPosVector: MapPosVector?
+    /**
+     * 그룹 지정 포인트 표출
+     * @param mapPosArr MutableList<MapPos>
+     */
+    fun drawGroupBoundaryLayer(mapPosArr: MutableList<MapPos>) {
+
+        _groupLocalVectorDataSource?.clear()
+
+        runOnUiThread {
+            if (mapPosArr.isNotEmpty()) {
+                _restButton.isEnabled = true
+                _groupButton.isEnabled = true
+            }
+        }
+
+        var pointSymbol: Point?
 
         _groupLocalVectorDataSource = LocalVectorDataSource(_proj)
+        _pointGroupVertaxArr = mutableListOf()
 
-        when(mapPosArr.size){
+        for (pos in mapPosArr) {
+            pointSymbol = Point(pos, setPointStyle(Color(255, 0, 0, 255), 13F))
 
-            // 3개미만은 포인트 벡터로 레이어 표현
-            in 0..2 -> {
-                Log.d("imchic","3개미만")
-
-                for (pos in mapPosArr) {
-                    groupPoint = Point(pos, setPointStyle(Color(255, 0, 0, 255), 13F))
-                    _groupLocalVectorDataSource?.add(groupPoint)
-                }
-            }
-            // 3개이상은 폴리곤 벡터로 레이어 표현
-            else -> {
-                Log.d("imchic", "3개이상")
-                groupPolygonMapPosVector = MapPosVector()
-
-                for(pos in mapPosArr){
-                    groupPolygonMapPosVector.add(pos)
-                }
-
-                groupPolygon = Polygon(groupPolygonMapPosVector, setPolygonStyle(Color(255, 0, 0, 40), Color(255, 0,0, 255), 2F))
-                _groupLocalVectorDataSource?.add(groupPolygon)
-                _mapView?.layers?.remove(_mapView?.layers?.get(_mapView?.layers?.count()!! - 1))
-
-            }
+            _groupLocalVectorDataSource?.add(pointSymbol)
+            _pointGroupVertaxArr.add(pos)
         }
-
-        Log.d("imchic", _groupLocalVectorDataSource?.featureCollection?.featureCount.toString())
 
         _groupVecotrLayer = EditableVectorLayer(_groupLocalVectorDataSource)
-        _selectListener = VectorElementSelectEventListener(this@MainActivity, _groupVecotrLayer)
 
-        _groupVecotrLayer?.run {
-            vectorEditEventListener = _editEventListener
-            vectorElementEventListener = _selectListener
-        }
-
-        _mapView?.layers?.add(_groupVecotrLayer)
-
+        _mapView.layers?.add(_groupVecotrLayer)
 
     }
+
 
 }
