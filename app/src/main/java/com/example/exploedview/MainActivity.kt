@@ -7,6 +7,7 @@ import com.carto.core.MapPos
 import com.carto.core.MapPosVector
 import com.carto.core.MapRange
 import com.carto.datasources.LocalVectorDataSource
+import com.carto.geometry.PolygonGeometry
 import com.carto.graphics.Color
 import com.carto.layers.EditableVectorLayer
 import com.carto.layers.VectorLayer
@@ -209,20 +210,28 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             filterArr.map {
                 utils.logI("기존 : ${it.bounds}") // 최대값이 포함된 MapBounds
 
-                val tmpMinMapPos = MapPos(it.bounds.min.x, it.bounds.min.y)
-                val tmpMaxMapPos = MapPos(it.bounds.max.x, it.bounds.max.y)
+                /**
+                 * @see 층 추가    = [min X, max Y] , [max X, max Y] , [max X, max Y + 8] , [min X , max Y + 8]
+                 * @see 호실 추가  = y값은 고정 , maxX = +10  [ maxX, maxY] []
+                 */
 
-//                utils.logI("tmpMinMapPos : $tmpMinMapPos") // 최소값 포함된 MapBounds
-//                utils.logI("tmpMaxMapPos : $tmpMaxMapPos") // 최대값이 포함된 MapBounds
+                val mMinPos = MapPos(it.bounds.min.x, it.bounds.max.y)
+                val mMaxPos = MapPos(it.bounds.max.x, it.bounds.max.y)
 
-                val tmpMapBounds = MapBounds(MapPos(tmpMinMapPos.x, tmpMinMapPos.y + 8), MapPos(tmpMaxMapPos.x, tmpMaxMapPos.y + 8))
-                utils.logI("tmpMapBounds : $tmpMapBounds")
+                val mMinPos2 = MapPos(it.bounds.max.x, it.bounds.max.y + 8)
+                val mMaxPos2 = MapPos(it.bounds.min.x, it.bounds.max.y + 8)
 
                 val vector = MapPosVector()
-                vector.add(tmpMinMapPos)
-                vector.add(tmpMaxMapPos)
 
-                val copyPoly = Polygon(vector, setPolygonStyle(Color(255, 0, 0, 255), Color(0, 0, 0, 255), 2F))
+                vector.add(mMinPos)
+                vector.add(mMaxPos)
+                vector.add(mMinPos2)
+                vector.add(mMaxPos2)
+
+                val tmpPolygonGeometry = PolygonGeometry(vector)
+
+                val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, 255), Color(0, 0, 0, 255), 2F))
+                utils.logI("copyPoly MapBounds ${copyPoly.bounds}")
                 _copyVectorDataSource?.add(copyPoly)
             }
 
