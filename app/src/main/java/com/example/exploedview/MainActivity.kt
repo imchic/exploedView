@@ -2,7 +2,6 @@ package com.example.exploedview
 
 import android.widget.Button
 import com.carto.components.Options
-import com.carto.core.MapBounds
 import com.carto.core.MapPos
 import com.carto.core.MapPosVector
 import com.carto.core.MapRange
@@ -31,20 +30,22 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     val utils: Utils by lazy { Utils(localClassName) }
 
     private val _restButton: Button by lazy { binding.btnReset }
-    private val _copyButton: Button by lazy { binding.btnCopy }
+    private val _addFloorButton: Button by lazy { binding.btnAddFloor }
     private val _selectButton: Button by lazy { binding.btnSelect }
     private val _groupButton: Button by lazy { binding.btnGroup }
 
     val _areaButton: Button by lazy { binding.btnArea }
 
     var selectToggle: Boolean = false
+    
+    private val _alpha: Short by lazy { 10 }
 
     private lateinit var _mapView: MapView
     private lateinit var _mapOpt: Options
 
     private lateinit var _proj: Projection
     private var _localVectorDataSource: LocalVectorDataSource? = null
-    private var _copyVectorDataSource: LocalVectorDataSource? = null
+    private var _addFloorDataSource: LocalVectorDataSource? = null
 
     private var _groupLocalVectorDataSource: LocalVectorDataSource? = null
     private var _posVector: MapPosVector? = null
@@ -71,6 +72,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     private var _selectListener: VectorElementSelectEventListener? = null
 
     private var _deselectListener: VectorElementDeselectListener? = null
+
+    private var _increaseNum: Int = 8
+    private var _addFloorFlag: Boolean = false
+    private var _addLineFlag: Boolean = false
 
     override fun initView() {
         super.initView()
@@ -132,7 +137,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
                     for(pos in _pointGroupVertaxArr) {
                         groupPolygonMapPosVector.add(pos)
                     }
-                    val polygonGroupSymbol = Polygon(groupPolygonMapPosVector, setPolygonStyle(Color(0, 0, 255, 30), Color(0, 0, 255, 255), 2F))
+                    val polygonGroupSymbol = Polygon(groupPolygonMapPosVector, setPolygonStyle(Color(0, 0, 255, _alpha), Color(0, 0, 255, 255), 2F))
                     _groupLocalVectorDataSource?.add(polygonGroupSymbol)
                 }
 
@@ -155,6 +160,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
         }
 
+        /**
+         * 선택 Event
+         */
         _selectButton.setOnClickListener {
             selectToggle = !selectToggle
 
@@ -172,8 +180,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
          * 그룹 바운더리 영역 삭제 (초기화)
          */
         _restButton.setOnClickListener {
+
             removeLayer()
-            setDefaultLayerStyle()
+            drawExploedLayer()
+
+            _addFloorFlag = false
+
             getToast("초기화를 헀습니다.")
         }
 
@@ -187,7 +199,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
                 val flag: Boolean? = _editEventListener?.withinPolygonArr?.contains(poly)
 
                 if(flag == true){
-                    poly.style = setPolygonStyle(Color(0, 255,0,30), Color(0, 255,0,255), 2F)
+                    poly.style = setPolygonStyle(Color(0, 255,0,_alpha), Color(0, 255,0,255), 2F)
                 }
             }
 
@@ -195,9 +207,19 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
         }
 
-        _copyButton.setOnClickListener {
+        /**
+         * 층 추가
+         */
+        _addFloorButton.setOnClickListener {
 
-            _copyVectorDataSource = LocalVectorDataSource(_proj)
+           _increaseNum =  if(_addFloorFlag){
+               _mapView.layers.remove(_mapView.layers.get(getLayerCount() - 1))
+                _increaseNum + 8
+            } else {
+                8
+           }
+
+            _addFloorDataSource = LocalVectorDataSource(_proj)
 
             val getMaxVal = arrayListOf<Int>()
 
@@ -212,14 +234,14 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
                 /**
                  * @see 층 추가    = [min X, max Y] , [max X, max Y] , [max X, max Y + 8] , [min X , max Y + 8]
-                 * @see 호실 추가  = y값은 고정 , maxX = +10  [ maxX, maxY] []
+                 * @see 호실 추가   = y값은 고정 , maxX = +10  [ maxX, maxY] []
                  */
 
                 val mMinPos = MapPos(it.bounds.min.x, it.bounds.max.y)
                 val mMaxPos = MapPos(it.bounds.max.x, it.bounds.max.y)
 
-                val mMinPos2 = MapPos(it.bounds.max.x, it.bounds.max.y + 8)
-                val mMaxPos2 = MapPos(it.bounds.min.x, it.bounds.max.y + 8)
+                val mMinPos2 = MapPos(it.bounds.max.x, it.bounds.max.y + _increaseNum)
+                val mMaxPos2 = MapPos(it.bounds.min.x, it.bounds.max.y + _increaseNum)
 
                 val vector = MapPosVector()
 
@@ -230,33 +252,50 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
                 val tmpPolygonGeometry = PolygonGeometry(vector)
 
-                val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, 255), Color(0, 0, 0, 255), 2F))
+                val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
                 utils.logI("copyPoly MapBounds ${copyPoly.bounds}")
-                _copyVectorDataSource?.add(copyPoly)
+                _addFloorDataSource?.add(copyPoly)
             }
 
-            _copyVecotrLayer = VectorLayer(_copyVectorDataSource)
+            _copyVecotrLayer = VectorLayer(_addFloorDataSource)
             _mapView.layers.add(_copyVecotrLayer)
+
+            _addFloorFlag = true
+
 
         }
     }
 
     private fun setDefaultLayerStyle() {
-        makePolygonArr.map { data -> data.style = setPolygonStyle(Color(255, 255, 0, 255), Color(0, 0, 0, 255), 2F) }
+        makePolygonArr.map { data -> data.style = setPolygonStyle(Color(255, 255, 0, _alpha), Color(0, 0, 0, 255), 2F) }
     }
 
-    /**
+    /**`´
      * 그룹 지정 레이어 초기화
      */
     private fun removeLayer() {
-        _mapCustomEventListener?.groupMapPosArr?.clear()
-        _mapView.layers.remove(_mapView.layers.get(_mapView.layers.count() -1))
 
-        _groupLocalVectorDataSource?.clear()
+//        _mapCustomEventListener?.groupMapPosArr?.clear()
+//        _mapView.layers.remove(_mapView.layers.get(_mapView.layers.count() -1))
 
-        _groupButton.isEnabled = false
-        _areaButton.isEnabled = false
-        _selectButton.isEnabled = true
+        try {
+            _groupLocalVectorDataSource?.clear()
+            _localVectorDataSource?.clear()
+            _addFloorDataSource?.clear()
+
+            utils.logI("before layer count [${getLayerCount()}]")
+
+            _mapView.layers.removeAll(_mapView.layers.all)
+
+            utils.logI("after layer count [${getLayerCount()}]")
+
+            _groupButton.isEnabled = false
+            _areaButton.isEnabled = false
+            _selectButton.isEnabled = true
+
+        } catch (e: Exception) {
+            utils.logE(e.toString())
+        }
 
     }
 
@@ -278,11 +317,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             val getFeatures = parseJson.get("features").asJsonArray
             for (i in 0 until getFeatures.size()) {
 
-                _codeArr.add(
-                    getFeatures.get(i).asJsonObject.get("geometry").asJsonObject.get("coordinates").asJsonArray.get(
-                        0
-                    ).asJsonArray.get(0).asJsonArray.toString()
-                )
+                _codeArr.add(getFeatures.get(i).asJsonObject.get("geometry").asJsonObject.get("coordinates").asJsonArray.get(0).asJsonArray.get(0).asJsonArray.toString())
 
                 val properties = getFeatures.get(i).asJsonObject.get("properties").asJsonObject
                 val hoNm: String = properties.get("ho_nm").asString
@@ -323,7 +358,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
         _posVectorArr.forEachIndexed { idx, pos ->
 
-            val polygon = Polygon(pos, setPolygonStyle(Color(255, 255, 0, 10), Color(0, 0, 0, 255), 2F))
+            val polygon = Polygon(pos, setPolygonStyle(Color(255, 255, 0, _alpha), Color(0, 0, 0, 255), 2F))
             val minusNum = 1.8
 
             makePolygonArr.add(polygon)
@@ -354,10 +389,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             _selectListener = VectorElementSelectEventListener(this@MainActivity, null)
             _deselectListener = VectorElementDeselectListener(_vecotrLayer)
 
-            _mapView.layers?.add(_vecotrLayer)
-            _mapView.mapEventListener = _mapCustomEventListener
-
         }
+
+        _mapView.layers?.add(_vecotrLayer)
+        _mapView.mapEventListener = _mapCustomEventListener
     }
 
     /**
@@ -443,8 +478,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             if (data.geometry.centerPos == mapPos) {
 
                 when (type) {
-                    "select" -> data.style = setPolygonStyle(Color(255, 123, 0, 255), Color(0, 0, 0, 255), 2F)
-                    "deselect" -> data.style = setPolygonStyle(Color(255, 255, 0, 255), Color(0, 0, 0, 255), 2F)
+                    "select" -> data.style = setPolygonStyle(Color(255, 123, 0, _alpha), Color(0, 0, 0, 255), 2F)
+                    "deselect" -> data.style = setPolygonStyle(Color(255, 255, 0, _alpha), Color(0, 0, 0, 255), 2F)
                 }
             }
         }

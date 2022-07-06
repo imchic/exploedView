@@ -7,6 +7,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/transparent"
         tools:context=".MainActivity">
 
     <com.carto.ui.MapView
@@ -16,58 +17,115 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintTop_toBottomOf="@+id/btn_group"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+            android:id="@+id/btn_add_floor"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:text="층추가"
+            android:layout_margin="4dp"
+            android:enabled="true"
+            app:layout_constraintVertical_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/btn_add_line"
+    />
+
+     <Button
+             android:id="@+id/btn_add_line"
+             android:layout_width="wrap_content"
+             android:layout_height="0dp"
+             android:text="라인추가"
+             android:layout_margin="4dp"
+             app:layout_constraintStart_toStartOf="parent"
+             android:enabled="true"
+             app:layout_constraintBottom_toTopOf="@+id/btn_add_ho" />
+
+    <Button
+            android:id="@+id/btn_add_ho"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:text="호 추가"
+            android:layout_margin="4dp"
+            app:layout_constraintStart_toStartOf="parent"
+            android:enabled="true"
+            app:layout_constraintBottom_toTopOf="@+id/btn_change_honm" />
+    
+    <Button
+            android:id="@+id/btn_change_honm"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:text="호실 변경"
+            android:layout_margin="4dp"
+            app:layout_constraintStart_toStartOf="parent"
+            android:enabled="true"
+            app:layout_constraintBottom_toTopOf="@+id/btn_del"
+    />
+
+     <Button
+             android:id="@+id/btn_del"
+             android:layout_width="wrap_content"
+             android:layout_height="0dp"
+             android:text="선택 삭제"
+             android:layout_margin="4dp"
+             app:layout_constraintStart_toStartOf="parent"
+             android:enabled="true"
+             app:layout_constraintBottom_toTopOf="@+id/btn_reset"
+     />
 
 
     <Button
             android:id="@+id/btn_reset"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="reset"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_height="0dp"
+            android:text="초기화"
+            android:layout_margin="4dp"
+            android:enabled="true"
             app:layout_constraintStart_toStartOf="parent"
-            android:enabled="false"
+            app:layout_constraintBottom_toBottomOf="parent"
     />
 
-    <Button
-            android:id="@+id/btn_copy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="copy"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@id/btn_reset"
-            android:enabled="true"
-    />
 
     <Button
             android:id="@+id/btn_select"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="select"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@id/btn_copy"
+            android:layout_margin="4dp"
+            android:text="객체선택"
             android:enabled="true"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/btn_group"
+            app:layout_constraintHorizontal_chainStyle="spread"
     />
 
     <Button
             android:id="@+id/btn_group"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:text="그룹지정"
             android:enabled="false"
-            app:cornerRadius="@dimen/cardview_default_radius"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/btn_select"
-            android:text="group" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/btn_select"
+            app:layout_constraintRight_toLeftOf="@id/btn_area"
+    />
 
     <Button
             android:id="@+id/btn_area"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:text="그룹영역 생성"
             android:enabled="false"
-            app:cornerRadius="@dimen/cardview_default_radius"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/btn_group"
-            android:text="area" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/btn_group"
+            app:layout_constraintRight_toRightOf="parent"
+    />
 
   </androidx.constraintlayout.widget.ConstraintLayout>
 
