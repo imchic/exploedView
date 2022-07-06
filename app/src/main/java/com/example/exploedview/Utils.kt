@@ -1,6 +1,5 @@
 package com.example.exploedview
 
-<<<<<<< HEAD
 import android.util.Log
 
 
@@ -50,8 +49,4 @@ class Utils(classStr: String) {
         sb.append(" → $logMsg")
         return sb.toString()
     }
-
-=======
-class Utils {
->>>>>>> b5dfcba (test)
 }
