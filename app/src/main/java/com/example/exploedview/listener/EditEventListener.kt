@@ -50,12 +50,12 @@ class EditEventListener(private val activity: MainActivity) : VectorEditEventLis
 
         activity.makePolygonArr.forEach {poly ->
             val withinPoly = _modifyElementBoudns?.contains(poly.bounds)
-            activity.utils.logI(withinPoly.toString())
+//            activity.utils.logI(withinPoly.toString())
             if(withinPoly == true) withinPolygonArr?.add(poly)
         }
 
         // 그룹영역에 포함된 Polygon 배열
-        activity.utils.logI("포함된 Polygon => ${withinPolygonArr.toString()}")
+//        activity.utils.logI("포함된 Polygon => ${withinPolygonArr.toString()}")
         activity._areaButton.isEnabled = true
 
     }

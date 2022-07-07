@@ -1,6 +1,5 @@
 package com.example.exploedview.listener
 
-import android.util.Log
 import com.carto.core.MapPos
 import com.carto.layers.EditableVectorLayer
 import com.carto.layers.VectorElementEventListener
@@ -14,9 +13,13 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
     private val _selectElementArr = mutableListOf<MapPos>()
 
     override fun onVectorElementClicked(clickInfo: VectorElementClickInfo): Boolean {
-        if(activity.selectToggle){
-            select(clickInfo)
+
+        activity.apply {
+            if(_selectFlag || _groupFlag){
+                select(clickInfo)
+            }
         }
+
         return true
     }
 
@@ -26,37 +29,39 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
 
         val centerPos = element.vectorElement.geometry.centerPos
 
-        when (element.vectorElement) {
-            is Text -> {
-                activity.utils.logD("vectorElement Type => Text")
-            }
-            else -> {
-                activity.utils.logD("vectorElement Type => EditableLayer")
+        if(activity._selectFlag){
+            when (element.vectorElement) {
+                is Text -> {
+                    activity.utils.logD("vectorElement Type => Text")
+                }
+                else -> {
+                    activity.utils.logD("vectorElement Type => EditableLayer")
 
-                _selectElementArr.apply {
-                    // 신규
-                    if (isEmpty()) {
-                        add(centerPos)
-                        activity.togglePolygonStyle("select", centerPos)
-
-                    // 중복
-                    } else {
-                        if (!contains(centerPos)) {
+                    _selectElementArr.apply {
+                        // 신규
+                        if (isEmpty()) {
                             add(centerPos)
                             activity.togglePolygonStyle("select", centerPos)
 
+                            // 중복
                         } else {
-                            remove(centerPos)
-                            activity.togglePolygonStyle("deselect", centerPos)
+                            if (!contains(centerPos)) {
+                                add(centerPos)
+                                activity.togglePolygonStyle("select", centerPos)
 
+                            } else {
+                                remove(centerPos)
+                                activity.togglePolygonStyle("deselect", centerPos)
+
+                            }
                         }
                     }
-                }
 
+                }
             }
+            getSelectElementArr()
         }
 
-        getSelectElementArr()
     }
 
 

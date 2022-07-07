@@ -29,51 +29,58 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
     val utils: Utils by lazy { Utils(localClassName) }
 
-    private val _restButton: Button by lazy { binding.btnReset }
+    private val _resetButton: Button by lazy { binding.btnReset }
     private val _addFloorButton: Button by lazy { binding.btnAddFloor }
+    private val _addLineButton: Button by lazy { binding.btnAddLine }
     private val _selectButton: Button by lazy { binding.btnSelect }
     private val _groupButton: Button by lazy { binding.btnGroup }
 
     val _areaButton: Button by lazy { binding.btnArea }
 
-    var selectToggle: Boolean = false
-    
-    private val _alpha: Short by lazy { 10 }
+    private val _alpha: Short by lazy { 50 }
 
     private lateinit var _mapView: MapView
-    private lateinit var _mapOpt: Options
 
+    private lateinit var _mapOpt: Options
     private lateinit var _proj: Projection
+
     private var _localVectorDataSource: LocalVectorDataSource? = null
+
     private var _addFloorDataSource: LocalVectorDataSource? = null
+    private var _addLineDataSource: LocalVectorDataSource? = null
 
     private var _groupLocalVectorDataSource: LocalVectorDataSource? = null
     private var _posVector: MapPosVector? = null
+
     private var _pointStyleBuilder: PointStyleBuilder? = null
     private var _lineStyleBuilder: LineStyleBuilder? = null
     private var _polygonStyleBuilder: PolygonStyleBuilder? = null
-
     private var _textStyleBuilder: TextStyleBuilder? = null
-    private var _vecotrLayer: EditableVectorLayer? = null
 
+    private var _vecotrLayer: EditableVectorLayer? = null
     private var _groupVecotrLayer: EditableVectorLayer? = null
+
     private var _copyVecotrLayer: VectorLayer? = null
     private var _codeArr = mutableListOf<String>()
     private var _pointGroupVertaxArr = mutableListOf<MapPos>()
-
     private var _posVectorArr = mutableListOf<MapPosVector>()
+
     private var _labelHoNmArr = mutableListOf<String>()
     private var _labelHuNumArr = mutableListOf<String>()
     private var _labelCpoedTxtArr = mutableListOf<String>()
-
     var makePolygonArr = mutableListOf<Polygon>()
+
     private var _mapCustomEventListener: MapCustomEventListener? = null
     private var _editEventListener: EditEventListener? = null
     private var _selectListener: VectorElementSelectEventListener? = null
-
     private var _deselectListener: VectorElementDeselectListener? = null
 
-    private var _increaseNum: Int = 8
+    private var _increaseFloorNum: Int = 8
+    private var _increaseLineNum: Int = 10
+
+    var _selectFlag: Boolean = false
+    var _groupFlag: Boolean = false
+
     private var _addFloorFlag: Boolean = false
     private var _addLineFlag: Boolean = false
 
@@ -108,55 +115,62 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
          */
         _groupButton.setOnClickListener {
 
-            removeLayer()
+            _groupLocalVectorDataSource?.clear()
 
-            when (_pointGroupVertaxArr.size) {
+            if(_pointGroupVertaxArr.isNotEmpty()){
+                when (_pointGroupVertaxArr.size) {
 
-                // 포인트
-                1 -> {
-                    for (pos in _pointGroupVertaxArr) {
-                        val pointGroupSymbol = Point(pos, setPointStyle(Color(0, 0, 255, 255), 13F))
-                        _groupLocalVectorDataSource?.add(pointGroupSymbol)
+                    // 포인트
+                    1 -> {
+                        for (pos in _pointGroupVertaxArr) {
+                            val pointGroupSymbol = Point(pos, setPointStyle(Color(0, 0, 255, 255), 13F))
+                            _groupLocalVectorDataSource?.add(pointGroupSymbol)
+                        }
                     }
-                }
 
-                // 라인
-                2 -> {
-                    val groupLineMapPosVector = MapPosVector()
-                    for(pos in _pointGroupVertaxArr) {
-                        groupLineMapPosVector.add(pos)
-                    }
-                    val lineGroupSymbol = Line(groupLineMapPosVector, setLineStyle(Color(0, 0, 255, 255), LineJoinType.LINE_JOIN_TYPE_ROUND, 8F))
+                    // 라인
+                    2 -> {
+                        val groupLineMapPosVector = MapPosVector()
+                        for(pos in _pointGroupVertaxArr) {
+                            groupLineMapPosVector.add(pos)
+                        }
+                        val lineGroupSymbol = Line(groupLineMapPosVector, setLineStyle(Color(0, 0, 255, 255), LineJoinType.LINE_JOIN_TYPE_ROUND, 8F))
 //                    lineGroupSymbol.setMetaDataElement("ClickText", Variant("Line nr 1"))
-                    _groupLocalVectorDataSource?.add(lineGroupSymbol)
-                }
-
-                // 폴리곤
-                else -> {
-                    val groupPolygonMapPosVector = MapPosVector()
-                    for(pos in _pointGroupVertaxArr) {
-                        groupPolygonMapPosVector.add(pos)
+                        _groupLocalVectorDataSource?.add(lineGroupSymbol)
                     }
-                    val polygonGroupSymbol = Polygon(groupPolygonMapPosVector, setPolygonStyle(Color(0, 0, 255, _alpha), Color(0, 0, 255, 255), 2F))
-                    _groupLocalVectorDataSource?.add(polygonGroupSymbol)
+
+                    // 폴리곤
+                    else -> {
+                        val groupPolygonMapPosVector = MapPosVector()
+                        for(pos in _pointGroupVertaxArr) {
+                            groupPolygonMapPosVector.add(pos)
+                        }
+                        val polygonGroupSymbol = Polygon(groupPolygonMapPosVector, setPolygonStyle(Color(0, 0, 255, _alpha), Color(0, 0, 255, 255), 2F))
+                        _groupLocalVectorDataSource?.add(polygonGroupSymbol)
+                    }
+
                 }
 
+                _groupVecotrLayer = EditableVectorLayer(_groupLocalVectorDataSource)
+                _selectListener = VectorElementSelectEventListener(this@MainActivity, _groupVecotrLayer)
+
+                _groupVecotrLayer?.run {
+                    vectorEditEventListener = _editEventListener
+                    vectorElementEventListener = _selectListener
+                }
+
+                _mapView.layers?.add(_groupVecotrLayer)
+
+                it.isEnabled = false
+
+                //selectToggle = true
+                _groupFlag = true
+                _selectButton.isEnabled = false
+
+            } else {
+                getToast("화면을 클릭하여 그룹 영역을 지정해주세요 \n (포인트 3개이상 필요)")
             }
 
-            _groupVecotrLayer = EditableVectorLayer(_groupLocalVectorDataSource)
-            _selectListener = VectorElementSelectEventListener(this@MainActivity, _groupVecotrLayer)
-
-            _groupVecotrLayer?.run {
-                vectorEditEventListener = _editEventListener
-                vectorElementEventListener = _selectListener
-            }
-
-            _mapView.layers?.add(_groupVecotrLayer)
-
-            it.isEnabled = false
-
-            selectToggle = true
-            _selectButton.isEnabled = false
 
         }
 
@@ -164,27 +178,29 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
          * 선택 Event
          */
         _selectButton.setOnClickListener {
-            selectToggle = !selectToggle
+            _selectFlag = !_selectFlag
 
-            if(selectToggle){
+            if(_selectFlag){
                 getToast("선택모드")
             } else {
                 getToast("비선택모드")
                 setDefaultLayerStyle()
             }
 
-            utils.logI(selectToggle.toString())
+            utils.logI(_selectFlag.toString())
         }
 
         /**
          * 그룹 바운더리 영역 삭제 (초기화)
          */
-        _restButton.setOnClickListener {
+        _resetButton.setOnClickListener {
 
             removeLayer()
             drawExploedLayer()
 
+            _selectFlag = false
             _addFloorFlag = false
+            _addLineFlag = false
 
             getToast("초기화를 헀습니다.")
         }
@@ -194,16 +210,35 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
          */
         _areaButton.setOnClickListener {
 
-            makePolygonArr.map { poly ->
+            try {
+                makePolygonArr.map { poly ->
 
-                val flag: Boolean? = _editEventListener?.withinPolygonArr?.contains(poly)
+                    val polyContainsFlag: Boolean? = _editEventListener?.withinPolygonArr?.contains(poly)
 
-                if(flag == true){
-                    poly.style = setPolygonStyle(Color(0, 255,0,_alpha), Color(0, 255,0,255), 2F)
+                    if(polyContainsFlag == true){
+                        poly.style = setPolygonStyle(Color(0, 255,0,_alpha), Color(0, 255,0,255), 2F)
+                    }
                 }
+
+                _groupLocalVectorDataSource?.clear()
+
+
+                //lastRemoveMapViewLayer()
+
+//                for(i in 0 .. getLayerCount()){
+//                    utils.logI("${_mapView.layers} [$i]")
+//                }
+
+//                utils.logI(_mapView.layers.toString())
+
+//                _mapView.layers.delete()
+
+
+            } catch (e: Exception) {
+                utils.logE(e.toString())
             }
 
-            removeLayer()
+//            removeLayer()
 
         }
 
@@ -212,11 +247,15 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
          */
         _addFloorButton.setOnClickListener {
 
-           _increaseNum =  if(_addFloorFlag){
-               _mapView.layers.remove(_mapView.layers.get(getLayerCount() - 1))
-                _increaseNum + 8
+//            _increaseFloorNum = 8
+
+            _addFloorDataSource?.clear()
+
+           _increaseFloorNum =  if(_addFloorFlag){
+               lastRemoveMapViewLayer()
+               _increaseFloorNum + 8
             } else {
-                8
+               _increaseFloorNum
            }
 
             _addFloorDataSource = LocalVectorDataSource(_proj)
@@ -234,23 +273,25 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
                 /**
                  * @see 층 추가    = [min X, max Y] , [max X, max Y] , [max X, max Y + 8] , [min X , max Y + 8]
-                 * @see 호실 추가   = y값은 고정 , maxX = +10  [ maxX, maxY] []
                  */
 
                 val mMinPos = MapPos(it.bounds.min.x, it.bounds.max.y)
                 val mMaxPos = MapPos(it.bounds.max.x, it.bounds.max.y)
 
-                val mMinPos2 = MapPos(it.bounds.max.x, it.bounds.max.y + _increaseNum)
-                val mMaxPos2 = MapPos(it.bounds.min.x, it.bounds.max.y + _increaseNum)
+                val mMinPos2 = MapPos(it.bounds.max.x, it.bounds.max.y + _increaseFloorNum)
+                val mMaxPos2 = MapPos(it.bounds.min.x, it.bounds.max.y + _increaseFloorNum)
 
-                val vector = MapPosVector()
+                _posVector = MapPosVector()
 
-                vector.add(mMinPos)
-                vector.add(mMaxPos)
-                vector.add(mMinPos2)
-                vector.add(mMaxPos2)
+                _posVector?.apply {
+                    add(mMinPos)
+                    add(mMaxPos)
+                    add(mMinPos2)
+                    add(mMaxPos2)
+                }
 
-                val tmpPolygonGeometry = PolygonGeometry(vector)
+
+                val tmpPolygonGeometry = PolygonGeometry(_posVector)
 
                 val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
                 utils.logI("copyPoly MapBounds ${copyPoly.bounds}")
@@ -264,6 +305,79 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
 
         }
+
+        /**
+         * 라인추가
+         */
+        _addLineButton.setOnClickListener {
+
+//            _increaseLineNum = 10
+
+            _addLineDataSource?.clear()
+
+            _increaseLineNum =  if(_addLineFlag){
+                lastRemoveMapViewLayer()
+                _increaseLineNum + 10
+            } else {
+                _increaseLineNum
+            }
+
+            _addLineDataSource = LocalVectorDataSource(_proj)
+
+            val getMaxVal = arrayListOf<Int>()
+
+            utils.logI("polygonArrSize => ${makePolygonArr.size}")
+
+            makePolygonArr.map { getMaxVal.add(it.bounds.max.x.toInt()) /* 최대값 구하기*/ }
+
+            val resultMaxValue: Double = Collections.max(getMaxVal).toDouble()
+
+
+            val filterArr = makePolygonArr.filter { it.bounds.max.x.toInt() == resultMaxValue.toInt() }
+
+            filterArr.map {
+                utils.logI("기존 : ${it.bounds}") // 최대값이 포함된 MapBounds
+
+
+                /**
+                 * @see 호실 추가   = y값은 고정 , maxX = +10
+                 */
+
+
+                val mMinPos = MapPos(it.bounds.max.x, it.bounds.min.y)
+                val mMaxPos = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.min.y)
+
+                val mMaxPos2 = MapPos(it.bounds.max.x, it.bounds.max.y)
+                val mMinPos2 = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.max.y)
+
+
+                _posVector = MapPosVector()
+
+                _posVector?.apply {
+                    add(mMinPos)
+                    add(mMaxPos)
+                    add(mMinPos2)
+                    add(mMaxPos2)
+                }
+
+                val tmpPolygonGeometry = PolygonGeometry(_posVector)
+
+                val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
+                utils.logI("copyPoly MapBounds ${copyPoly.bounds}")
+                _addLineDataSource?.add(copyPoly)
+            }
+
+            _copyVecotrLayer = VectorLayer(_addLineDataSource)
+            _mapView.layers.add(_copyVecotrLayer)
+
+            _addLineFlag = true
+
+
+        }
+    }
+
+    private fun lastRemoveMapViewLayer() {
+        _mapView.layers.remove(_mapView.layers.get(getLayerCount() - 1))
     }
 
     private fun setDefaultLayerStyle() {
@@ -275,18 +389,26 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
      */
     private fun removeLayer() {
 
-//        _mapCustomEventListener?.groupMapPosArr?.clear()
-//        _mapView.layers.remove(_mapView.layers.get(_mapView.layers.count() -1))
-
         try {
-            _groupLocalVectorDataSource?.clear()
-            _localVectorDataSource?.clear()
-            _addFloorDataSource?.clear()
 
-            utils.logI("before layer count [${getLayerCount()}]")
+            _increaseFloorNum = 8
+            _increaseLineNum = 10
 
             _mapView.layers.removeAll(_mapView.layers.all)
 
+            makePolygonArr.clear()
+            _codeArr.clear()
+            _labelHoNmArr.clear()
+            _labelHuNumArr.clear()
+            _labelCpoedTxtArr.clear()
+
+            _mapCustomEventListener?.groupMapPosArr?.clear()
+            _groupLocalVectorDataSource?.clear()
+            _localVectorDataSource?.clear()
+            _addFloorDataSource?.clear()
+            _addLineDataSource?.clear()
+
+            utils.logI("before layer count [${getLayerCount()}]")
             utils.logI("after layer count [${getLayerCount()}]")
 
             _groupButton.isEnabled = false
@@ -309,6 +431,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
      * 전개도 레이어 표출
      */
     private fun drawExploedLayer() {
+
         try {
             val tempDataStr =
                 "{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[10.0001,7.5],[1.1826975241075102E-4,7.5],[1.1826975241075102E-4,15],[10.0001,15],[10.0001,7.5]]]]},\"properties\":{\"apt_no\":\"146\",\"adm_cd\":\"6000101\",\"bd_mgt_sn\":\"6000101001100930001021266\",\"buld_nm\":\"국제대진빌라\",\"buld_nm_dc\":null,\"ho_nm\":\"201\",\"hhd_sum\":0,\"seq_no\":1,\"apt_type\":\"9\",\"nso_nm\":\"국제대진빌라\",\"nso_nm_dc\":null,\"hu_num_yn\":\"Y\",\"poed_group\":0,\"coord_x\":5,\"coord_y\":11,\"poed_cd\":\"\",\"poed_nm\":\"\",\"hu_num\":\"39\",\"poed_txt\":\"058\",\"poed_nmtxt\":\"058-1\",\"budi_id\":\"2647004013356\",\"poed_grp2\":1,\"c_poed_cd\":\"001\",\"c_poed_txt\":\"001-1\",\"prt_nm\":\"국제대진빌라\",\"prt_nm_dc\":null,\"make_date\":null,\"stair_date\":\"2019-04-26\",\"poed_date\":\"2019-04-26\",\"stair_grp\":1,\"no_stair_grp\":null,\"no_stair_g\":null,\"surv_id\":\"39\",\"delete_yn\":null},\"id\":\"adm_cd_apt_no.111015462\"},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[10.0001,0.0],[1.1826975241075102E-4,0.0],[1.1826975241075102E-4,7.5],[10.0001,7.5],[10.0001,0.0]]]]},\"properties\":{\"apt_no\":\"146\",\"adm_cd\":\"6000101\",\"bd_mgt_sn\":\"6000101001100930001021266\",\"buld_nm\":\"국제대진빌라\",\"buld_nm_dc\":null,\"ho_nm\":\"101\",\"hhd_sum\":0,\"seq_no\":2,\"apt_type\":\"9\",\"nso_nm\":\"국제대진빌라\",\"nso_nm_dc\":null,\"hu_num_yn\":\"Y\",\"poed_group\":0,\"coord_x\":5,\"coord_y\":4,\"poed_cd\":\"\",\"poed_nm\":\"\",\"hu_num\":\"37\",\"poed_txt\":\"058\",\"poed_nmtxt\":\"058-1\",\"budi_id\":\"2647004013356\",\"poed_grp2\":1,\"c_poed_cd\":\"001\",\"c_poed_txt\":\"001-1\",\"prt_nm\":\"국제대진빌라\",\"prt_nm_dc\":null,\"make_date\":null,\"stair_date\":\"2019-04-26\",\"poed_date\":\"2019-04-26\",\"stair_grp\":1,\"no_stair_grp\":null,\"no_stair_g\":null,\"surv_id\":\"39\",\"delete_yn\":null},\"id\":\"adm_cd_apt_no.111015461\"},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[21.0001,22.5],[11.0001,22.5],[11.0001,30],[21.0001,30],[21.0001,22.5]]]]},\"properties\":{\"apt_no\":\"146\",\"adm_cd\":\"6000101\",\"bd_mgt_sn\":\"6000101001100930001021266\",\"buld_nm\":\"국제대진빌라\",\"buld_nm_dc\":null,\"ho_nm\":\"402\",\"hhd_sum\":0E-15,\"seq_no\":4.000000000000000,\"apt_type\":\"9\",\"nso_nm\":\"국제대진빌라\",\"nso_nm_dc\":null,\"hu_num_yn\":\"Y\",\"poed_group\":0E-15,\"coord_x\":16.000000000000000,\"coord_y\":26.000000000000000,\"poed_cd\":\"\",\"poed_nm\":\"\",\"hu_num\":\"44\",\"poed_txt\":\"058\",\"poed_nmtxt\":\"058-1\",\"budi_id\":\"2647004013356\",\"poed_grp2\":1.000000000000000,\"c_poed_cd\":\"001\",\"c_poed_txt\":\"001-1\",\"prt_nm\":\"국제대진빌라\",\"prt_nm_dc\":null,\"make_date\":null,\"stair_date\":\"2019-04-26\",\"poed_date\":\"2019-04-26\",\"stair_grp\":1.000000000000000,\"no_stair_grp\":null,\"no_stair_g\":null,\"surv_id\":\"39\",\"delete_yn\":null},\"id\":\"adm_cd_apt_no.67224349\"},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[11.0001,0.0],[11.0001,7.5],[21.0001,7.5],[21.0001,0.0],[11.0001,0.0]]]]},\"properties\":{\"apt_no\":\"146\",\"adm_cd\":\"6000101\",\"bd_mgt_sn\":\"6000101001100930001021266\",\"buld_nm\":\"국제대진빌라\",\"buld_nm_dc\":null,\"ho_nm\":\"102\",\"hhd_sum\":0E-15,\"seq_no\":3.000000000000000,\"apt_type\":\"9\",\"nso_nm\":\"국제대진빌라\",\"nso_nm_dc\":null,\"hu_num_yn\":\"Y\",\"poed_group\":0E-15,\"coord_x\":16.000000000000000,\"coord_y\":4.000000000000000,\"poed_cd\":\"\",\"poed_nm\":\"\",\"hu_num\":\"38\",\"poed_txt\":\"058\",\"poed_nmtxt\":\"058-1\",\"budi_id\":\"2647004013356\",\"poed_grp2\":1.000000000000000,\"c_poed_cd\":\"001\",\"c_poed_txt\":\"001-1\",\"prt_nm\":\"국제대진빌라\",\"prt_nm_dc\":null,\"make_date\":null,\"stair_date\":\"2019-04-26\",\"poed_date\":\"2019-04-26\",\"stair_grp\":1.000000000000000,\"no_stair_grp\":null,\"no_stair_g\":null,\"surv_id\":\"39\",\"delete_yn\":null},\"id\":\"adm_cd_apt_no.67224348\"},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[21.0001,7.5],[11.0001,7.5],[11.0001,15],[21.0001,15],[21.0001,7.5]]]]},\"properties\":{\"apt_no\":\"146\",\"adm_cd\":\"6000101\",\"bd_mgt_sn\":\"6000101001100930001021266\",\"buld_nm\":\"국제대진빌라\",\"buld_nm_dc\":null,\"ho_nm\":\"202\",\"hhd_sum\":0E-15,\"seq_no\":9.000000000000000,\"apt_type\":\"9\",\"nso_nm\":\"국제대진빌라\",\"nso_nm_dc\":null,\"hu_num_yn\":\"Y\",\"poed_group\":0E-15,\"coord_x\":16.000000000000000,\"coord_y\":11.000000000000000,\"poed_cd\":\"\",\"poed_nm\":\"\",\"hu_num\":\"40\",\"poed_txt\":\"058\",\"poed_nmtxt\":\"058-1\",\"budi_id\":\"2647004013356\",\"poed_grp2\":1.000000000000000,\"c_poed_cd\":\"001\",\"c_poed_txt\":\"001-1\",\"prt_nm\":\"국제대진빌라\",\"prt_nm_dc\":null,\"make_date\":null,\"stair_date\":\"2019-04-26\",\"poed_date\":\"2019-04-26\",\"stair_grp\":1.000000000000000,\"no_stair_grp\":null,\"no_stair_g\":null,\"surv_id\":\"39\",\"delete_yn\":null},\"id\":\"adm_cd_apt_no.67224347\"},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[21.0001,15],[11.0001,15],[11.0001,22.5],[21.0001,22.5],[21.0001,15]]]]},\"properties\":{\"apt_no\":\"146\",\"adm_cd\":\"6000101\",\"bd_mgt_sn\":\"6000101001100930001021266\",\"buld_nm\":\"국제대진빌라\",\"buld_nm_dc\":null,\"ho_nm\":\"302\",\"hhd_sum\":0E-15,\"seq_no\":8.000000000000000,\"apt_type\":\"9\",\"nso_nm\":\"국제대진빌라\",\"nso_nm_dc\":null,\"hu_num_yn\":\"Y\",\"poed_group\":0E-15,\"coord_x\":16.000000000000000,\"coord_y\":19.000000000000000,\"poed_cd\":\"\",\"poed_nm\":\"\",\"hu_num\":\"42\",\"poed_txt\":\"058\",\"poed_nmtxt\":\"058-1\",\"budi_id\":\"2647004013356\",\"poed_grp2\":1.000000000000000,\"c_poed_cd\":\"001\",\"c_poed_txt\":\"001-1\",\"prt_nm\":\"국제대진빌라\",\"prt_nm_dc\":null,\"make_date\":null,\"stair_date\":\"2019-04-26\",\"poed_date\":\"2019-04-26\",\"stair_grp\":1.000000000000000,\"no_stair_grp\":null,\"no_stair_g\":null,\"surv_id\":\"39\",\"delete_yn\":null},\"id\":\"adm_cd_apt_no.67224346\"},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[10.0001,22.5],[1.1826975241075102E-4,22.5],[1.1826975241075102E-4,30],[10.0001,30],[10.0001,22.5]]]]},\"properties\":{\"apt_no\":\"146\",\"adm_cd\":\"6000101\",\"bd_mgt_sn\":\"6000101001100930001021266\",\"buld_nm\":\"국제대진빌라\",\"buld_nm_dc\":null,\"ho_nm\":\"401\",\"hhd_sum\":0E-15,\"seq_no\":5.000000000000000,\"apt_type\":\"9\",\"nso_nm\":\"국제대진빌라\",\"nso_nm_dc\":null,\"hu_num_yn\":\"Y\",\"poed_group\":0E-15,\"coord_x\":5.000000000000000,\"coord_y\":26.000000000000000,\"poed_cd\":\"\",\"poed_nm\":\"\",\"hu_num\":\"43\",\"poed_txt\":\"058\",\"poed_nmtxt\":\"058-1\",\"budi_id\":\"2647004013356\",\"poed_grp2\":1.000000000000000,\"c_poed_cd\":\"001\",\"c_poed_txt\":\"001-1\",\"prt_nm\":\"국제대진빌라\",\"prt_nm_dc\":null,\"make_date\":null,\"stair_date\":\"2019-04-26\",\"poed_date\":\"2019-04-26\",\"stair_grp\":1.000000000000000,\"no_stair_grp\":null,\"no_stair_g\":null,\"surv_id\":\"39\",\"delete_yn\":null},\"id\":\"adm_cd_apt_no.67224344\"},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiPolygon\",\"coordinates\":[[[[10.0001,15],[1.1826975241075102E-4,15],[1.1826975241075102E-4,22.5],[10.0001,22.5],[10.0001,15]]]]},\"properties\":{\"apt_no\":\"146\",\"adm_cd\":\"6000101\",\"bd_mgt_sn\":\"6000101001100930001021266\",\"buld_nm\":\"국제대진빌라\",\"buld_nm_dc\":null,\"ho_nm\":\"301\",\"hhd_sum\":0E-15,\"seq_no\":7.000000000000000,\"apt_type\":\"9\",\"nso_nm\":\"국제대진빌라\",\"nso_nm_dc\":null,\"hu_num_yn\":\"Y\",\"poed_group\":0E-15,\"coord_x\":5.000000000000000,\"coord_y\":19.000000000000000,\"poed_cd\":\"\",\"poed_nm\":\"\",\"hu_num\":\"41\",\"poed_txt\":\"058\",\"poed_nmtxt\":\"058-1\",\"budi_id\":\"2647004013356\",\"poed_grp2\":1.000000000000000,\"c_poed_cd\":\"001\",\"c_poed_txt\":\"001-1\",\"prt_nm\":\"국제대진빌라\",\"prt_nm_dc\":null,\"make_date\":null,\"stair_date\":\"2019-04-26\",\"poed_date\":\"2019-04-26\",\"stair_grp\":1.000000000000000,\"no_stair_grp\":null,\"no_stair_g\":null,\"surv_id\":\"39\",\"delete_yn\":null},\"id\":\"adm_cd_apt_no.67224345\"}]}"
@@ -393,6 +516,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
         _mapView.layers?.add(_vecotrLayer)
         _mapView.mapEventListener = _mapCustomEventListener
+
+        utils.logI("exploedview layer count ${getLayerCount()}")
     }
 
     /**
@@ -498,7 +623,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
         runOnUiThread {
             if (mapPosArr.isNotEmpty()) {
-                _restButton.isEnabled = true
+                _resetButton.isEnabled = true
                 _groupButton.isEnabled = true
             }
         }
