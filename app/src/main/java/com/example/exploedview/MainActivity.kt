@@ -1,12 +1,12 @@
 package com.example.exploedview
 
+import android.view.View
 import android.widget.Button
 import com.carto.components.Options
 import com.carto.core.MapPos
 import com.carto.core.MapPosVector
 import com.carto.core.MapRange
 import com.carto.datasources.LocalVectorDataSource
-import com.carto.geometry.PolygonGeometry
 import com.carto.graphics.Color
 import com.carto.layers.EditableVectorLayer
 import com.carto.layers.VectorLayer
@@ -18,6 +18,7 @@ import com.carto.vectorelements.Point
 import com.carto.vectorelements.Polygon
 import com.carto.vectorelements.Text
 import com.example.exploedview.databinding.ActivityMainBinding
+import com.example.exploedview.enums.EditEventEnum
 import com.example.exploedview.listener.EditEventListener
 import com.example.exploedview.listener.MapCustomEventListener
 import com.example.exploedview.listener.VectorElementDeselectListener
@@ -25,7 +26,7 @@ import com.example.exploedview.listener.VectorElementSelectEventListener
 import java.util.Collections
 
 
-class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
+class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), View.OnClickListener {
 
     val utils: Utils by lazy { Utils(localClassName) }
 
@@ -75,9 +76,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     private var _selectListener: VectorElementSelectEventListener? = null
     private var _deselectListener: VectorElementDeselectListener? = null
 
-    private var _increaseFloorIndex:Int = 0
-
+    private var _increaseFloorIndex: Int = 0
     private var _increaseFloorNum: Int = 8
+
+    private var _increaseLineIndex: Int = 0
     private var _increaseLineNum: Int = 10
 
     var _selectFlag: Boolean = false
@@ -93,6 +95,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             initMapView()
             setInitZoomAndPos(22F, MapPos(10.0001, 7.5), 0.5F)
             drawExploedLayer()
+
+            btnAddFloor.setOnClickListener(this@MainActivity)
+            btnAddLine.setOnClickListener(this@MainActivity)
         }
     }
 
@@ -119,7 +124,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
             _groupLocalVectorDataSource?.clear()
 
-            if(_pointGroupVertaxArr.isNotEmpty()){
+            if (_pointGroupVertaxArr.isNotEmpty()) {
                 when (_pointGroupVertaxArr.size) {
 
                     // 포인트
@@ -133,10 +138,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
                     // 라인
                     2 -> {
                         val groupLineMapPosVector = MapPosVector()
-                        for(pos in _pointGroupVertaxArr) {
+                        for (pos in _pointGroupVertaxArr) {
                             groupLineMapPosVector.add(pos)
                         }
-                        val lineGroupSymbol = Line(groupLineMapPosVector, setLineStyle(Color(0, 0, 255, 255), LineJoinType.LINE_JOIN_TYPE_ROUND, 8F))
+                        val lineGroupSymbol = Line(
+                            groupLineMapPosVector,
+                            setLineStyle(Color(0, 0, 255, 255), LineJoinType.LINE_JOIN_TYPE_ROUND, 8F)
+                        )
 //                    lineGroupSymbol.setMetaDataElement("ClickText", Variant("Line nr 1"))
                         _groupLocalVectorDataSource?.add(lineGroupSymbol)
                     }
@@ -144,10 +152,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
                     // 폴리곤
                     else -> {
                         val groupPolygonMapPosVector = MapPosVector()
-                        for(pos in _pointGroupVertaxArr) {
+                        for (pos in _pointGroupVertaxArr) {
                             groupPolygonMapPosVector.add(pos)
                         }
-                        val polygonGroupSymbol = Polygon(groupPolygonMapPosVector, setPolygonStyle(Color(0, 0, 255, _alpha), Color(0, 0, 255, 255), 2F))
+                        val polygonGroupSymbol = Polygon(
+                            groupPolygonMapPosVector,
+                            setPolygonStyle(Color(0, 0, 255, _alpha), Color(0, 0, 255, 255), 2F)
+                        )
                         _groupLocalVectorDataSource?.add(polygonGroupSymbol)
                     }
 
@@ -182,7 +193,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
         _selectButton.setOnClickListener {
             _selectFlag = !_selectFlag
 
-            if(_selectFlag){
+            if (_selectFlag) {
                 getToast("선택모드")
             } else {
                 getToast("비선택모드")
@@ -217,8 +228,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
                     val polyContainsFlag: Boolean? = _editEventListener?.withinPolygonArr?.contains(poly)
 
-                    if(polyContainsFlag == true){
-                        poly.style = setPolygonStyle(Color(0, 255,0,_alpha), Color(0, 255,0,255), 2F)
+                    if (polyContainsFlag == true) {
+                        poly.style = setPolygonStyle(Color(0, 255, 0, _alpha), Color(0, 255, 0, 255), 2F)
                     }
                 }
 
@@ -247,133 +258,77 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
         /**
          * 층 추가
          */
-        _addFloorButton.setOnClickListener {
-
-//            _addFloorDataSource?.clear()
-
-           if(_addFloorFlag){
-               _increaseFloorIndex = _increaseFloorIndex.inc()
-            }
-
-            _addFloorDataSource = LocalVectorDataSource(_proj)
-
-            val getMaxVal = arrayListOf<Int>()
-
-            makePolygonArr.map { getMaxVal.add(it.bounds.max.y.toInt()) /* 최대값 구하기*/ }
-
-            val resultMaxValue: Double = Collections.max(getMaxVal).toDouble()
-            val filterArr = makePolygonArr.filter { it.bounds.max.y == resultMaxValue }
-
-
-            filterArr.mapIndexed { index, it ->
-                utils.logI("기존 : ${it.bounds}") // 최대값이 포함된 MapBounds
-
-                /**
-                 * @see 층 추가    = [min X, max Y] , [max X, max Y] , [max X, max Y + 8] , [min X , max Y + 8]
-                 */
-
-                val mMinPos = MapPos(it.bounds.min.x, it.bounds.max.y)
-                val mMaxPos = MapPos(it.bounds.max.x, it.bounds.max.y)
-
-                val mMinPos2 = MapPos(it.bounds.max.x, it.bounds.max.y  + _increaseFloorNum )
-                val mMaxPos2 = MapPos(it.bounds.min.x, it.bounds.max.y  + _increaseFloorNum )
-
-                _posVector = MapPosVector()
-
-                _posVector?.apply {
-                    add(mMinPos)
-                    add(mMaxPos)
-                    add(mMinPos2)
-                    add(mMaxPos2)
-                }
-
-
-                val tmpPolygonGeometry = PolygonGeometry(_posVector)
-
-                val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
-                utils.logI("추가 : ${copyPoly.bounds}")
-
-                makePolygonArr.add(copyPoly)
-                _addFloorDataSource?.add(copyPoly)
-            }
-
-            _copyVecotrLayer = VectorLayer(_addFloorDataSource)
-            _mapView.layers.add(_copyVecotrLayer)
-
-            _addFloorFlag = true
-
-
-        }
+//        _addFloorButton.setOnClickListener { addExplodedVectorElement() }
 
         /**
          * 라인추가
          */
         _addLineButton.setOnClickListener {
 
-//            _increaseLineNum = 10
 
-            _addLineDataSource?.clear()
-
-            _increaseLineNum =  if(_addLineFlag){
-                lastRemoveMapViewLayer()
-                _increaseLineNum + 10
-            } else {
-                _increaseLineNum
-            }
-
-            _addLineDataSource = LocalVectorDataSource(_proj)
-
-            val getMaxVal = arrayListOf<Int>()
-
-            utils.logI("polygonArrSize => ${makePolygonArr.size}")
-
-            makePolygonArr.map { getMaxVal.add(it.bounds.max.x.toInt()) /* 최대값 구하기*/ }
-
-            val resultMaxValue: Double = Collections.max(getMaxVal).toDouble()
-
-
-            val filterArr = makePolygonArr.filter { it.bounds.max.x.toInt() == resultMaxValue.toInt() }
-
-            filterArr.map {
-                utils.logI("기존 : ${it.bounds}") // 최대값이 포함된 MapBounds
-
-
-                /**
-                 * @see 호실 추가   = y값은 고정 , maxX = +10
-                 */
-
-
-                val mMinPos = MapPos(it.bounds.max.x, it.bounds.min.y)
-                val mMaxPos = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.min.y)
-
-                val mMaxPos2 = MapPos(it.bounds.max.x, it.bounds.max.y)
-                val mMinPos2 = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.max.y)
-
-
-                _posVector = MapPosVector()
-
-                _posVector?.apply {
-                    add(mMinPos)
-                    add(mMaxPos)
-                    add(mMinPos2)
-                    add(mMaxPos2)
-                }
-
-                val tmpPolygonGeometry = PolygonGeometry(_posVector)
-
-                val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
-                utils.logI("copyPoly MapBounds ${copyPoly.bounds}")
-                _addLineDataSource?.add(copyPoly)
-            }
-
-            _copyVecotrLayer = VectorLayer(_addLineDataSource)
-            _mapView.layers.add(_copyVecotrLayer)
-
-            _addLineFlag = true
+//            _addLineDataSource?.clear()
+//
+//            _increaseLineNum =  if(_addLineFlag){
+//                lastRemoveMapViewLayer()
+//                _increaseLineNum + 10
+//            } else {
+//                _increaseLineNum
+//            }
+//
+//            _addLineDataSource = LocalVectorDataSource(_proj)
+//
+//            val getMaxVal = arrayListOf<Int>()
+//
+//            utils.logI("polygonArrSize => ${makePolygonArr.size}")
+//
+//            makePolygonArr.map { getMaxVal.add(it.bounds.max.x.toInt()) /* 최대값 구하기*/ }
+//
+//            val resultMaxValue: Double = Collections.max(getMaxVal).toDouble()
+//
+//
+//            val filterArr = makePolygonArr.filter { it.bounds.max.x.toInt() == resultMaxValue.toInt() }
+//
+//            filterArr.map {
+//                utils.logI("기존 : ${it.bounds}") // 최대값이 포함된 MapBounds
+//
+//
+//                /**
+//                 * @see 호실 추가   = y값은 고정 , maxX = +10
+//                 */
+//
+//
+//                val mMinPos = MapPos(it.bounds.max.x, it.bounds.min.y)
+//                val mMaxPos = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.min.y)
+//
+//                val mMaxPos2 = MapPos(it.bounds.max.x, it.bounds.max.y)
+//                val mMinPos2 = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.max.y)
+//
+//
+//                _posVector = MapPosVector()
+//
+//                _posVector?.apply {
+//                    add(mMinPos)
+//                    add(mMaxPos)
+//                    add(mMinPos2)
+//                    add(mMaxPos2)
+//                }
+//
+//                val tmpPolygonGeometry = PolygonGeometry(_posVector)
+//
+//                val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
+//                utils.logI("copyPoly MapBounds ${copyPoly.bounds}")
+//                _addLineDataSource?.add(copyPoly)
+//            }
+//
+//            _copyVecotrLayer = VectorLayer(_addLineDataSource)
+//            _mapView.layers.add(_copyVecotrLayer)
+//
+//            _addLineFlag = true
 
 
         }
     }
+
 
     private fun lastRemoveMapViewLayer() {
         _mapView.layers.remove(_mapView.layers.get(getLayerCount() - 1))
@@ -424,7 +379,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
      * 레이어의 갯수
      * @return Int
      */
-    private fun getLayerCount() : Int = _mapView.layers.count()
+    private fun getLayerCount(): Int = _mapView.layers.count()
 
     /**
      * 전개도 레이어 표출
@@ -439,7 +394,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             val getFeatures = parseJson.get("features").asJsonArray
             for (i in 0 until getFeatures.size()) {
 
-                _codeArr.add(getFeatures.get(i).asJsonObject.get("geometry").asJsonObject.get("coordinates").asJsonArray.get(0).asJsonArray.get(0).asJsonArray.toString())
+                _codeArr.add(
+                    getFeatures.get(i).asJsonObject.get("geometry").asJsonObject.get("coordinates").asJsonArray.get(
+                        0
+                    ).asJsonArray.get(0).asJsonArray.toString()
+                )
 
                 val properties = getFeatures.get(i).asJsonObject.get("properties").asJsonObject
                 val hoNm: String = properties.get("ho_nm").asString
@@ -645,5 +604,85 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
 
     }
 
+    override fun onClick(v: View?) {
+        when (v?.id) {
+            R.id.btn_add_floor -> addExplodeVectorElement(EditEventEnum.FLOOR_UP)
+            R.id.btn_add_line -> addExplodeVectorElement(EditEventEnum.LINE_UP)
+        }
+    }
 
+    fun addExplodeVectorElement(type: EditEventEnum) {
+
+        val _source: LocalVectorDataSource?
+        val _maxValArr = arrayListOf<Int>()
+        val _filterArr: MutableList<Polygon>
+
+        _source = LocalVectorDataSource(_proj)
+
+        val resultMaxValue: Double
+
+        var south: MapPos
+        var west: MapPos
+        var north: MapPos
+        var east: MapPos
+
+        var addPolygon: Polygon
+        var vector: MapPosVector
+
+        when (type) {
+
+            EditEventEnum.FLOOR_UP -> {
+                makePolygonArr.map { _maxValArr.add(it.bounds.max.y.toInt()) /* 최대값 구하기*/ }
+                resultMaxValue = Collections.max(_maxValArr).toDouble()
+                _filterArr = makePolygonArr.filter { it.bounds.max.y == resultMaxValue } as MutableList<Polygon>
+
+                _filterArr.map {
+
+                    south = MapPos(it.bounds.min.x, it.bounds.max.y)
+                    west = MapPos(it.bounds.max.x, it.bounds.max.y)
+
+                    north = MapPos(it.bounds.max.x, it.bounds.max.y + _increaseFloorNum)
+                    east = MapPos(it.bounds.min.x, it.bounds.max.y + _increaseFloorNum)
+
+                    vector = MapPosVector()
+                    vector.apply { add(south); add(west); add(north); add(east) }
+
+                    addPolygon = Polygon(vector, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
+
+                    makePolygonArr.add(addPolygon)
+                    _source.add(addPolygon)
+
+                }
+            }
+
+            EditEventEnum.LINE_UP -> {
+                makePolygonArr.map { _maxValArr.add(it.bounds.max.x.toInt()) /* 최대값 구하기*/ }
+                resultMaxValue = Collections.max(_maxValArr).toDouble()
+                _filterArr = makePolygonArr.filter { it.bounds.max.x.toInt() == resultMaxValue.toInt() } as MutableList<Polygon>
+
+                _filterArr.map {
+
+                    south = MapPos(it.bounds.max.x, it.bounds.min.y)
+                    west = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.min.y)
+
+                    north = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.max.y)
+                    east = MapPos(it.bounds.max.x, it.bounds.max.y)
+
+                    vector = MapPosVector()
+                    vector.apply { add(south); add(west); add(north); add(east) }
+
+                    addPolygon = Polygon(vector, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
+
+                    makePolygonArr.add(addPolygon)
+                    _source.add(addPolygon)
+
+                }
+            }
+
+        }
+
+        _copyVecotrLayer = VectorLayer(_source)
+        _mapView.layers.add(_copyVecotrLayer)
+
+    }
 }
