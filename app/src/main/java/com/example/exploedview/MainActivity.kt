@@ -75,6 +75,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
     private var _selectListener: VectorElementSelectEventListener? = null
     private var _deselectListener: VectorElementDeselectListener? = null
 
+    private var _increaseFloorIndex:Int = 0
+
     private var _increaseFloorNum: Int = 8
     private var _increaseLineNum: Int = 10
 
@@ -247,16 +249,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
          */
         _addFloorButton.setOnClickListener {
 
-//            _increaseFloorNum = 8
+//            _addFloorDataSource?.clear()
 
-            _addFloorDataSource?.clear()
-
-           _increaseFloorNum =  if(_addFloorFlag){
-               lastRemoveMapViewLayer()
-               _increaseFloorNum + 8
-            } else {
-               _increaseFloorNum
-           }
+           if(_addFloorFlag){
+               _increaseFloorIndex = _increaseFloorIndex.inc()
+            }
 
             _addFloorDataSource = LocalVectorDataSource(_proj)
 
@@ -268,7 +265,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
             val filterArr = makePolygonArr.filter { it.bounds.max.y == resultMaxValue }
 
 
-            filterArr.map {
+            filterArr.mapIndexed { index, it ->
                 utils.logI("기존 : ${it.bounds}") // 최대값이 포함된 MapBounds
 
                 /**
@@ -278,8 +275,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
                 val mMinPos = MapPos(it.bounds.min.x, it.bounds.max.y)
                 val mMaxPos = MapPos(it.bounds.max.x, it.bounds.max.y)
 
-                val mMinPos2 = MapPos(it.bounds.max.x, it.bounds.max.y + _increaseFloorNum)
-                val mMaxPos2 = MapPos(it.bounds.min.x, it.bounds.max.y + _increaseFloorNum)
+                val mMinPos2 = MapPos(it.bounds.max.x, it.bounds.max.y  + _increaseFloorNum )
+                val mMaxPos2 = MapPos(it.bounds.min.x, it.bounds.max.y  + _increaseFloorNum )
 
                 _posVector = MapPosVector()
 
@@ -294,7 +291,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main) {
                 val tmpPolygonGeometry = PolygonGeometry(_posVector)
 
                 val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
-                utils.logI("copyPoly MapBounds ${copyPoly.bounds}")
+                utils.logI("추가 : ${copyPoly.bounds}")
+
+                makePolygonArr.add(copyPoly)
                 _addFloorDataSource?.add(copyPoly)
             }
 
