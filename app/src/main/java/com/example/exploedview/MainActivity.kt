@@ -23,7 +23,7 @@ import com.example.exploedview.listener.EditEventListener
 import com.example.exploedview.listener.MapCustomEventListener
 import com.example.exploedview.listener.VectorElementDeselectListener
 import com.example.exploedview.listener.VectorElementSelectEventListener
-import java.util.Collections
+import java.util.*
 
 
 class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), View.OnClickListener {
@@ -31,8 +31,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
     val utils: Utils by lazy { Utils(localClassName) }
 
     private val _resetButton: Button by lazy { binding.btnReset }
-    private val _addFloorButton: Button by lazy { binding.btnAddFloor }
-    private val _addLineButton: Button by lazy { binding.btnAddLine }
     private val _selectButton: Button by lazy { binding.btnSelect }
     private val _groupButton: Button by lazy { binding.btnGroup }
 
@@ -76,10 +74,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
     private var _selectListener: VectorElementSelectEventListener? = null
     private var _deselectListener: VectorElementDeselectListener? = null
 
-    private var _increaseFloorIndex: Int = 0
     private var _increaseFloorNum: Int = 8
-
-    private var _increaseLineIndex: Int = 0
     private var _increaseLineNum: Int = 10
 
     var _selectFlag: Boolean = false
@@ -107,13 +102,22 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
         _proj = _mapOpt.baseProjection
         _mapCustomEventListener = MapCustomEventListener(this@MainActivity)
 
+
+//        val overlayBitmap = BitmapUtils.loadBitmapFromAssets("ci.png")
+
+
         // 맵 옵션
         _mapOpt.apply {
             tiltRange = MapRange(90f, 90f) // 틸트 고정
             isRotatable = false // 회전
             isZoomGestures = false
+//            backgroundBitmap = overlayBitmap
+            watermarkAlignmentX = -2.0f
+            watermarkAlignmentY = -2.0f
             watermarkScale = 0.01f
         }
+
+        utils.logI("watermark xy => ${_mapOpt.watermarkAlignmentX}, ${_mapOpt.watermarkAlignmentY}")
 
         _localVectorDataSource = LocalVectorDataSource(_proj)
 
@@ -143,7 +147,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
                         }
                         val lineGroupSymbol = Line(
                             groupLineMapPosVector,
-                            setLineStyle(Color(0, 0, 255, 255), LineJoinType.LINE_JOIN_TYPE_ROUND, 8F)
+                            setLineStyle(Color(0, 0, 255, 255), LineJoinType.LINE_JOIN_TYPE_BEVEL, 8F)
                         )
 //                    lineGroupSymbol.setMetaDataElement("ClickText", Variant("Line nr 1"))
                         _groupLocalVectorDataSource?.add(lineGroupSymbol)
@@ -252,79 +256,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
             }
 
 //            removeLayer()
-
-        }
-
-        /**
-         * 층 추가
-         */
-//        _addFloorButton.setOnClickListener { addExplodedVectorElement() }
-
-        /**
-         * 라인추가
-         */
-        _addLineButton.setOnClickListener {
-
-
-//            _addLineDataSource?.clear()
-//
-//            _increaseLineNum =  if(_addLineFlag){
-//                lastRemoveMapViewLayer()
-//                _increaseLineNum + 10
-//            } else {
-//                _increaseLineNum
-//            }
-//
-//            _addLineDataSource = LocalVectorDataSource(_proj)
-//
-//            val getMaxVal = arrayListOf<Int>()
-//
-//            utils.logI("polygonArrSize => ${makePolygonArr.size}")
-//
-//            makePolygonArr.map { getMaxVal.add(it.bounds.max.x.toInt()) /* 최대값 구하기*/ }
-//
-//            val resultMaxValue: Double = Collections.max(getMaxVal).toDouble()
-//
-//
-//            val filterArr = makePolygonArr.filter { it.bounds.max.x.toInt() == resultMaxValue.toInt() }
-//
-//            filterArr.map {
-//                utils.logI("기존 : ${it.bounds}") // 최대값이 포함된 MapBounds
-//
-//
-//                /**
-//                 * @see 호실 추가   = y값은 고정 , maxX = +10
-//                 */
-//
-//
-//                val mMinPos = MapPos(it.bounds.max.x, it.bounds.min.y)
-//                val mMaxPos = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.min.y)
-//
-//                val mMaxPos2 = MapPos(it.bounds.max.x, it.bounds.max.y)
-//                val mMinPos2 = MapPos(it.bounds.max.x + _increaseLineNum, it.bounds.max.y)
-//
-//
-//                _posVector = MapPosVector()
-//
-//                _posVector?.apply {
-//                    add(mMinPos)
-//                    add(mMaxPos)
-//                    add(mMinPos2)
-//                    add(mMaxPos2)
-//                }
-//
-//                val tmpPolygonGeometry = PolygonGeometry(_posVector)
-//
-//                val copyPoly = Polygon(tmpPolygonGeometry, setPolygonStyle(Color(255, 0, 0, _alpha), Color(0, 0, 0, 255), 2F))
-//                utils.logI("copyPoly MapBounds ${copyPoly.bounds}")
-//                _addLineDataSource?.add(copyPoly)
-//            }
-//
-//            _copyVecotrLayer = VectorLayer(_addLineDataSource)
-//            _mapView.layers.add(_copyVecotrLayer)
-//
-//            _addLineFlag = true
-
 
         }
     }

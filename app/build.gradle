@@ -91,7 +91,7 @@ dependencies {
     /*implementation(name:'carto-mobile-sdk-gis-4.1.2-dev.15', ext:'aar')*/
 
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0' // http connection
-    implementation 'com.carto:carto-mobile-sdk:4.1.0@aar' // 안드로이드 네이티브 GIS 및 Map Layer 컨트롤
+    implementation 'com.carto:carto-mobile-sdk:4.4.6@aar' // 안드로이드 네이티브 GIS 및 Map Layer 컨트롤
     implementation 'com.google.code.gson:gson:2.8.6'  //gson
     implementation "com.fasterxml.jackson.core:jackson-core:2.9.9"
     implementation "com.fasterxml.jackson.core:jackson-annotations:2.9.9"
