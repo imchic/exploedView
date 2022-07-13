@@ -48,7 +48,7 @@ class EditEventListener(private val activity: MainActivity) : VectorEditEventLis
             }
         }
 
-        activity.makePolygonArr.forEach {poly ->
+        activity.createPolygonArr.forEach {poly ->
             val withinPoly = _modifyElementBoudns?.contains(poly.bounds)
 //            activity.utils.logI(withinPoly.toString())
             if(withinPoly == true) withinPolygonArr?.add(poly)

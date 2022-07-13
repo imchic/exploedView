@@ -14,11 +14,11 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
 
     override fun onVectorElementClicked(clickInfo: VectorElementClickInfo): Boolean {
 
-        activity.apply {
-            if(_selectFlag || _groupFlag){
+//        activity.apply {
+//            if(_selectFlag || _groupFlag){
                 select(clickInfo)
-            }
-        }
+//            }
+//        }
 
         return true
     }
@@ -29,7 +29,7 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
 
         val centerPos = element.vectorElement.geometry.centerPos
 
-        if(activity._selectFlag){
+//        if(activity._selectFlag){
             when (element.vectorElement) {
                 is Text -> {
                     activity.utils.logD("vectorElement Type => Text")
@@ -41,17 +41,17 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
                         // 신규
                         if (isEmpty()) {
                             add(centerPos)
-                            activity.togglePolygonStyle("select", centerPos)
+//                            activity.togglePolygonStyle("select", centerPos)
 
                             // 중복
                         } else {
                             if (!contains(centerPos)) {
                                 add(centerPos)
-                                activity.togglePolygonStyle("select", centerPos)
+//                                activity.togglePolygonStyle("select", centerPos)
 
                             } else {
                                 remove(centerPos)
-                                activity.togglePolygonStyle("deselect", centerPos)
+//                                activity.togglePolygonStyle("deselect", centerPos)
 
                             }
                         }
@@ -60,7 +60,7 @@ class VectorElementSelectEventListener(private val activity: MainActivity, val l
                 }
             }
             getSelectElementArr()
-        }
+//        }
 
     }
 
