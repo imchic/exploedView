@@ -1,4 +1,4 @@
-package com.example.exploedview
+package com.example.exploedview.base
 
 import android.os.Bundle
 import android.widget.Toast

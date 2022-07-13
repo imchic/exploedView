@@ -1,10 +1,9 @@
-package com.example.exploedview.listener
+package com.example.exploedview.map.listener
 
 import com.carto.core.MapPos
 import com.carto.core.MapPosVector
 import com.carto.core.Variant
 import com.carto.datasources.LocalVectorDataSource
-import com.carto.graphics.Color
 import com.carto.layers.EditableVectorLayer
 import com.carto.styles.LineJoinType
 import com.carto.ui.ClickType
@@ -13,13 +12,17 @@ import com.carto.ui.MapEventListener
 import com.carto.ui.MapView
 import com.carto.vectorelements.*
 import com.example.exploedview.MainActivity
-import com.example.exploedview.MapStyle
+import com.example.exploedview.MapConst
+import com.example.exploedview.enums.ColorEnum
+import com.example.exploedview.map.MapElementColor
+import com.example.exploedview.map.MapStyle
+import com.example.exploedview.util.LogUtil
 
 class MapCustomEventListener(
     private val activity: MainActivity,
     mapView: MapView?,
     var source: LocalVectorDataSource?,
-    layer: EditableVectorLayer?,
+    val layer: EditableVectorLayer?,
     val posArr: MutableList<MapPos>?
 ) : MapEventListener() {
 
@@ -29,6 +32,14 @@ class MapCustomEventListener(
     var polygon: Polygon? = null
 
     init {
+
+        activity.selectListener = VectorElementSelectEventListener(activity, layer)
+
+        layer?.run {
+            vectorEditEventListener = VectorElementEditEventListener(activity)
+            vectorElementEventListener = activity.selectListener
+        }
+
         mapView?.layers?.add(layer)
         activity.setLayerName(layer, "layerName", Variant("groupLayer"))
     }
@@ -39,14 +50,15 @@ class MapCustomEventListener(
         val element = VectorElementVector()
         val posVector = MapPosVector()
 
-        activity.utils.run {
+        LogUtil.run {
             when (mapClickInfo?.clickType) {
                 ClickType.CLICK_TYPE_SINGLE -> {
+                    i("single map click!")
                     posArr?.add(mapClickInfo.clickPos)
                 }
-                ClickType.CLICK_TYPE_LONG -> logI("Long map click!")
-                ClickType.CLICK_TYPE_DOUBLE -> logI("Double map click!")
-                ClickType.CLICK_TYPE_DUAL -> logI("Dual map click!")
+                ClickType.CLICK_TYPE_LONG -> i("Long map click!")
+                ClickType.CLICK_TYPE_DOUBLE -> i("Double map click!")
+                ClickType.CLICK_TYPE_DUAL -> i("Dual map click!")
                 else -> throw Exception("유효하지 않는 이벤트 발생")
             }
 
@@ -59,14 +71,14 @@ class MapCustomEventListener(
             val popupStyle = MapStyle.setBallonPopupStyle(10)
 
             val clickPosCnt = posArr?.size
-            logI("clickPosCnt => [$clickPosCnt]")
+            i("clickPosCnt => [$clickPosCnt]")
 
             // 포인트
             when (clickPosCnt) {
 
                 1 -> {
                     for (pos in posArr!!) {
-                        point = Point(pos, MapStyle.setPointStyle(Color(0, 0, 255, 255), 13F))
+                        point = Point(pos, MapStyle.setPointStyle(MapElementColor.set(ColorEnum.PINK, MapConst.FILL_OPACITY), 13F))
                         element.add(point)
 
                         popup = BalloonPopup(clickPos, popupStyle, "point", clickPosCnt.toString())
@@ -81,7 +93,7 @@ class MapCustomEventListener(
                     }
                     line = Line(
                         posVector,
-                        MapStyle.setLineStyle(Color(0, 0, 255, 255), LineJoinType.LINE_JOIN_TYPE_MITER, 8F)
+                        MapStyle.setLineStyle(MapElementColor.set(ColorEnum.PINK, MapConst.FILL_OPACITY), LineJoinType.LINE_JOIN_TYPE_MITER, 8F)
                     )
                     element.add(line)
 
@@ -96,10 +108,10 @@ class MapCustomEventListener(
                     }
                     polygon = Polygon(
                         posVector,
-                        MapStyle.setPolygonStyle(Color(0, 0, 255, 50), Color(0, 0, 255, 255), 2F)
+                        MapStyle.setPolygonStyle(MapElementColor.set(ColorEnum.PINK, MapConst.FILL_OPACITY), MapElementColor.set(ColorEnum.PINK, 255), 2F)
                     )
 
-                    logI("click create polygon => $posVector")
+                    i("click create polygon => $posVector")
                     element.add(polygon)
 
                     popup = BalloonPopup(clickPos, popupStyle, "polygon", clickPosCnt.toString())
@@ -108,7 +120,7 @@ class MapCustomEventListener(
 
             }
 
-            logI("element size => ${element.size()}")
+            i("element size => ${element.size()}")
             source?.clear()
             source?.addAll(element)
 

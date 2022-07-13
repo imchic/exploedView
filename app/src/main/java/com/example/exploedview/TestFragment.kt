@@ -1,5 +1,6 @@
 package com.example.exploedview
 
+import com.example.exploedview.base.BaseFragment
 import com.example.exploedview.databinding.FragmentTestBinding
 
 class TestFragment: BaseFragment<FragmentTestBinding>(R.layout.fragment_test) {
