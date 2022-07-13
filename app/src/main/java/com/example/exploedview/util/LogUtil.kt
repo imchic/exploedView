@@ -1,30 +1,31 @@
-package com.example.exploedview
+package com.example.exploedview.util
 
 import android.util.Log
+import com.example.exploedview.BuildConfig
 
 
-class Utils(classStr: String) {
+object LogUtil {
 
-    private var classNm: String = classStr
+    val classNm = Thread.currentThread().stackTrace[4].fileName.replace(".java", "::")
 
     /* 로그 */
-    fun logV(msg: String) {
+    fun v(msg: String) {
         if (BuildConfig.DEBUG) Log.v(classNm, "상세 \uD83D\uDC49\uD83D\uDC49" + buildLogMsg(msg))
     }
 
-    fun logD(msg: String) {
+    fun d(msg: String) {
         if (BuildConfig.DEBUG) Log.d(classNm, "디버깅 \uD83D\uDC49\uD83D\uDC49" + buildLogMsg(msg))
     }
 
-    fun logI(msg: String) {
+    fun i(msg: String) {
         if (BuildConfig.DEBUG) Log.i(classNm, "정보 \uD83D\uDC49\uD83D\uDC49" + buildLogMsg(msg))
     }
 
-    fun logW(msg: String) {
+    fun w(msg: String) {
         if (BuildConfig.DEBUG) Log.w(classNm, "경고 \uD83D\uDC49\uD83D\uDC49" + buildLogMsg(msg))
     }
 
-    fun logE(msg: String) {
+    fun e(msg: String) {
         if (BuildConfig.DEBUG) Log.e(classNm, "오류 \uD83D\uDC49\uD83D\uDC49" + buildLogMsg(msg))
     }
 

@@ -1,4 +1,4 @@
-package com.example.exploedview
+package com.example.exploedview.base
 
 import android.os.Bundle
 import android.widget.Toast
@@ -14,6 +14,8 @@ abstract class BaseActivity<T : ViewDataBinding>
     (@LayoutRes private val layoutId: Int) : AppCompatActivity() {
 
     protected lateinit var binding: T
+
+    private var toast: Toast? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         beforeSetContentView()
@@ -35,8 +37,15 @@ abstract class BaseActivity<T : ViewDataBinding>
     protected open fun initListener() {}
     protected open fun afterOnCreate() {}
 
-    fun getToast(str: String?) = Toast.makeText(this, str, Toast.LENGTH_SHORT).show()
+    fun showToast(msg: String?){
 
-    fun httpResultToJsonObject(resultStr: String): JsonObject = JsonParser.parseString(resultStr).asJsonObject
+        if(toast == null){
+            toast = Toast.makeText(this, msg, Toast.LENGTH_LONG)
+        } else {
+            toast?.setText(msg)
+        }
+        toast?.show()
+
+    }
 
 }
