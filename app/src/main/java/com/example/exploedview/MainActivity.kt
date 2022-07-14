@@ -10,10 +10,8 @@ import com.carto.datasources.LocalVectorDataSource
 import com.carto.geometry.FeatureCollection
 import com.carto.geometry.GeoJSONGeometryReader
 import com.carto.geometry.MultiPolygonGeometry
-import com.carto.graphics.Color
 import com.carto.layers.EditableVectorLayer
 import com.carto.layers.Layer
-import com.carto.layers.VectorLayer
 import com.carto.projections.Projection
 import com.carto.ui.MapView
 import com.carto.vectorelements.Polygon
@@ -25,12 +23,10 @@ import com.example.exploedview.databinding.ActivityMainBinding
 import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.enums.EditEventEnum
 import com.example.exploedview.extension.Extensions.max
-import com.example.exploedview.map.listener.VectorElementEditEventListener
-import com.example.exploedview.map.listener.MapCustomEventListener
-import com.example.exploedview.map.listener.VectorElementDeselectListener
-import com.example.exploedview.map.listener.VectorElementSelectEventListener
 import com.example.exploedview.map.MapElementColor
 import com.example.exploedview.map.MapStyle
+import com.example.exploedview.map.listener.MapCustomEventListener
+import com.example.exploedview.map.listener.VectorElementSelectEventListener
 import com.example.exploedview.util.LogUtil
 
 
@@ -42,15 +38,16 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
     private lateinit var _proj: Projection
 
     // source
+    private var explodeViewSource: LocalVectorDataSource? = null
     private var groupLayerSource: LocalVectorDataSource? = null
-    private var _addFloorDataSource: LocalVectorDataSource? = null
-    private var _addLineDataSource: LocalVectorDataSource? = null
-    private var _groupLocalVectorDataSource: LocalVectorDataSource? = null
+    private var floorUpDataSource: LocalVectorDataSource? = null
+    private var addLineDataSource: LocalVectorDataSource? = null
 
     // layer
+    private var explodeViewLayer: EditableVectorLayer? = null
     private var groupLayer: EditableVectorLayer? = null
-    private var _copyVecotrLayer: VectorLayer? = null
-    private var _vectorLayer: EditableVectorLayer? = null
+    private var floorUpLayer: EditableVectorLayer? = null
+    private var addLineLayer: EditableVectorLayer? = null
 
     // element arr
     var createPolygonArr = mutableListOf<Polygon>()
@@ -58,11 +55,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
     var clickPosArr = mutableListOf<MapPos>()
 
     // listener
-    private var _mapCustomEventListener: MapCustomEventListener? = null
-
-    var editEventListener: VectorElementEditEventListener? = null
     var selectListener: VectorElementSelectEventListener? = null
-    var deselectListener: VectorElementDeselectListener? = null
 
     companion object {
         private const val INCREASE_FLOOR_NUM = 8
@@ -75,8 +68,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
         binding.apply {
 
             initMapView()
-            setInitZoomAndPos(21F, MapPos(10.0001, 7.5), 0.5F)
-            createGeoJsonLayer()
+
+            // MapPos [x=10.226771, y=13.399454, z=0.000000]
+            setInitZoomAndPos(22.054665.toFloat(), MapPos(10.226771, 13.399454), 0.5F)
+            initExplodeViewLayer()
 
             this@MainActivity.run {
                 btnAddFloor.setOnClickListener(this)
@@ -95,8 +90,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
             _mapOpt = _mapView.options
             _proj = _mapOpt.baseProjection
 
-            groupLayerSource = LocalVectorDataSource(_proj)
-            groupLayer = EditableVectorLayer(groupLayerSource)
+            setLayer()
 
             _mapView.mapEventListener =
                 MapCustomEventListener(this@MainActivity, _mapView, groupLayerSource, groupLayer, clickPosArr)
@@ -113,28 +107,57 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
         }
     }
 
+    private fun setLayer() {
+        explodeViewSource = LocalVectorDataSource(_proj)
+        explodeViewLayer = addLayer("explodeView", explodeViewSource)
+
+        groupLayerSource = LocalVectorDataSource(_proj)
+        groupLayer = addLayer("group", groupLayerSource)
+
+        floorUpDataSource = LocalVectorDataSource(_proj)
+        floorUpLayer = addLayer("floorUp", floorUpDataSource)
+
+        addLineDataSource = LocalVectorDataSource(_proj)
+        addLineLayer = addLayer("addLine", addLineDataSource)
+    }
+
     override fun onClick(v: View?) {
         when (v?.id) {
             R.id.btn_add_floor -> addElement(EditEventEnum.FLOOR_UP)
             R.id.btn_add_line -> addElement(EditEventEnum.LINE_UP)
             R.id.btn_area -> getContainsElement()
-            R.id.btn_reset -> clearElementSource()
+            R.id.btn_reset -> clearElementSource("default")
         }
     }
 
     /**`´
      * 그룹 지정 레이어 초기화
      */
-    private fun clearElementSource() {
+    private fun clearElementSource(type: String) {
+
         runCatching {
+            when (type) {
+                "default", "group" -> true
+                else -> throw BaseException("잘못된 이벤트 명입니다.")
+            }
+        }.onSuccess {
+
+            initExplodeViewLayer()
+
             clickPosArr.clear()
             groupLayerSource?.clear()
-        }.onSuccess {
-            LogUtil.i("초기화 성공")
+            floorUpDataSource?.clear()
+            addLineDataSource?.clear()
+
+            if (MapConst.GROUP) {
+                MapStyle.togglePolygonStyle(createPolygonArr, createPolygonArr, type)
+            }
+
         }.onFailure {
-            LogUtil.e(it.toString())
+            LogUtil.e("[param: $type] ${it}")
         }
     }
+
 
     /**
      * 레이어의 갯수
@@ -145,16 +168,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
     /**
      * 전개도 레이어 표출
      */
-    private fun createGeoJsonLayer() {
+    private fun initExplodeViewLayer() {
 
         try {
-
-            val source = LocalVectorDataSource(_proj)
-            val layer = VectorLayer(source)
-
-            setLayerName(layer, "layerName", Variant("explodeViewLayer"))
-
-            _mapView.layers.add(layer)
+            explodeViewSource?.clear()
+            createPolygonArr.clear()
 
             val elements = VectorElementVector()
 
@@ -177,24 +195,45 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
                         createPolygon = Polygon(
                             geometry.getGeometry(j),
                             MapStyle.setPolygonStyle(
-                                MapElementColor.set(ColorEnum.GREEN, MapConst.FILL_OPACITY),
-                                Color(0, 0, 0, 255),
+                                MapElementColor.set(ColorEnum.GREEN),
+                                MapElementColor.set(ColorEnum.GREEN),
                                 2F
                             )
                         )
-                        createPolygonArr.add(createPolygon)
 
+                        createPolygon.setMetaDataElement("ho", Variant(hoNm))
+                        createPolygon.setMetaDataElement("hu", Variant(huNum))
+                        createPolygon.setMetaDataElement("cPoedTxt", Variant(cPoedTxt))
+
+                        createPolygonArr.add(createPolygon)
                         elements.add(createPolygon)
 
                         val minusNum = 1.8
-                        val centerPos =
-                            MapPos(geometry.getGeometry(j).centerPos.x, geometry.getGeometry(j).centerPos.y + minusNum)
+                        val centerPos = MapPos(geometry.getGeometry(j).centerPos.x, geometry.getGeometry(j).centerPos.y + minusNum)
                         val middlePos = MapPos(centerPos.x, centerPos.y - minusNum)
                         val botPos = MapPos(middlePos.x, middlePos.y - minusNum)
 
-                        elements.add(Text(centerPos, MapStyle.setTextStyle(Color(0, 0, 0, 255), 30F), hoNm))
-                        elements.add(Text(middlePos, MapStyle.setTextStyle(Color(255, 0, 0, 255), 32F), huNum))
-                        elements.add(Text(botPos, MapStyle.setTextStyle(Color(0, 0, 0, 255), 30F), cPoedTxt))
+                        elements.add(
+                            Text(
+                                middlePos,
+                                MapStyle.setTextStyle(MapElementColor.set(ColorEnum.RED), 32F),
+                                huNum
+                            )
+                        )
+                        elements.add(
+                            Text(
+                                botPos,
+                                MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 30F),
+                                cPoedTxt
+                            )
+                        )
+                        elements.add(
+                            Text(
+                                centerPos,
+                                MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 30F),
+                                hoNm
+                            )
+                        )
                     }
 
                 }
@@ -203,12 +242,36 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
             }
 
 
-            source.addAll(elements)
+            explodeViewSource?.addAll(elements)
 
         } catch (e: BaseException) {
             LogUtil.e(e.toString())
         }
 
+    }
+
+    private fun addLayer(name: String, source: LocalVectorDataSource?): EditableVectorLayer {
+
+        val layer: EditableVectorLayer?
+        val nameArr = mutableListOf<String>()
+
+        layer = EditableVectorLayer(source)
+
+        runCatching {
+            source ?: throw BaseException("레이어 init 에러")
+        }.onSuccess {
+            setLayerName(layer, "name", Variant(name))
+            _mapView.layers.add(layer)
+        }.onFailure {
+            LogUtil.e(it.toString())
+        }.also {
+            for (i in 0 until getLayerCount()) {
+                nameArr.add(_mapView.layers.get(i).metaData.get("name").string)
+            }
+        }
+        LogUtil.i("생성된 레이어 이름 : ${nameArr}, 현재 생성된 레이어의 갯수 : ${getLayerCount()}")
+
+        return layer
     }
 
     /**
@@ -259,8 +322,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
         val _maxValArr = arrayListOf<Int>()
         val _filterArr: MutableList<Polygon>
 
-        _source = LocalVectorDataSource(_proj)
-
         val resultMaxValue: Double
 
         var south: MapPos
@@ -269,12 +330,18 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
         var east: MapPos
 
         var addPolygon: Polygon
+        var addText: Text
         var vector: MapPosVector
+
+        val element = VectorElementVector()
 
         try {
             when (type) {
 
                 EditEventEnum.FLOOR_UP -> {
+
+                    _source = floorUpDataSource
+
                     createPolygonArr.map { _maxValArr.add(it.bounds.max.y.toInt()) /* 최대값 구하기*/ }
 
                     val max: Int = _maxValArr.max(_maxValArr)
@@ -296,19 +363,35 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
                         addPolygon = Polygon(
                             vector,
                             MapStyle.setPolygonStyle(
-                                Color(1, 113, 95, MapConst.FILL_OPACITY),
-                                Color(1, 113, 95, 255),
+                                MapElementColor.set(ColorEnum.BLUE),
+                                MapElementColor.set(ColorEnum.BLUE),
                                 2F
                             )
                         )
 
-                        createPolygonArr.add(addPolygon)
-                        _source.add(addPolygon)
+                        val convertHo = increaseFloorHoValue(it)
 
+                        addPolygon.setMetaDataElement("ho", Variant(convertHo.toString()))
+
+                        addText = Text(
+                            addPolygon.geometry.centerPos,
+                            MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 20F),
+                            convertHo.toString()
+                        )
+
+                        createPolygonArr.add(addPolygon)
+
+                        element.add(addPolygon)
+                        element.add(addText)
                     }
+
+                    _source?.addAll(element)
                 }
 
                 EditEventEnum.LINE_UP -> {
+
+                    _source = addLineDataSource
+
                     createPolygonArr.map { _maxValArr.add(it.bounds.max.x.toInt()) /* 최대값 구하기*/ }
                     val max: Int = _maxValArr.max(_maxValArr)
                     resultMaxValue = max.toDouble()
@@ -330,24 +413,28 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
                         addPolygon = Polygon(
                             vector,
                             MapStyle.setPolygonStyle(
-                                Color(255, 0, 221, MapConst.FILL_OPACITY),
-                                Color(255, 0, 221, 255),
+                                MapElementColor.set(ColorEnum.HOTPINK),
+                                MapElementColor.set(ColorEnum.HOTPINK),
                                 2F
                             )
                         )
 
-                        createPolygonArr.add(addPolygon)
-                        _source.add(addPolygon)
+                        addText = Text(
+                            addPolygon.geometry.centerPos,
+                            MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 20F),
+                            "라인 추가"
+                        )
 
+                        createPolygonArr.add(addPolygon)
+
+                        element.add(addPolygon)
+                        element.add(addText)
                     }
+
+                    _source?.addAll(element)
                 }
 
-                else -> throw BaseException("지정되지 않은 이벤트 입니다.")
-
             }
-
-            _copyVecotrLayer = VectorLayer(_source)
-            _mapView.layers.add(_copyVecotrLayer)
 
         } catch (e: BaseException) {
             LogUtil.e(e.toString())
@@ -355,38 +442,40 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
 
     }
 
+    private fun increaseFloorHoValue(it: Polygon): Int {
+        val convertHo = when (it.getMetaDataElement("ho").string.length) {
+            3 -> {
+                it.getMetaDataElement("ho").string.toInt() + 100
+            }
+            else -> {
+                it.getMetaDataElement("ho").string.toInt() + 1000
+            }
+        }
+        return convertHo
+    }
+
     /**
      * 그룹 영역 내 Element 가져오기
      */
     fun getContainsElement() {
 
+        val bool = containsPolygonArr.isNotEmpty()
+
         runCatching {
-            createPolygonArr.map { poly ->
+            if (!bool) throw BaseException("그룹영역이 지정되지 않았습니다. \n 그룹영역을 드래그해주세요.")
+        }.onSuccess {
+            //성공시만 실행
+            clickPosArr.clear()
+            groupLayerSource?.clear()
 
-                when {
-                    containsPolygonArr.isNotEmpty() -> {
-                        val polyContainsFlag: Boolean? = containsPolygonArr?.contains(poly)
+            MapStyle.togglePolygonStyle(createPolygonArr, containsPolygonArr, "group")
 
-                        if (polyContainsFlag == true) {
-                            poly.style = MapStyle.setPolygonStyle(
-                                MapElementColor.set(ColorEnum.PURPLE, MapConst.FILL_OPACITY),
-                                MapElementColor.set(ColorEnum.PURPLE, 255),
-                                2F
-                            )
-                        }
-                    }
-                    else -> throw BaseException("그룹영역을 지정해주세요.")
-                }
-            }
-            clearElementSource()
+            MapConst.GROUP = true
 
-        }.onFailure {
-            when (it) {
-                is BaseException -> {
-                    LogUtil.e(it.toString())
-                }
-            }
+        }.onFailure { it: Throwable ->
+            //실패시만 실행 (try - catch문의 catch와 유사)
+            LogUtil.e("group status: $bool, ${it}")
+            showToast(it.message)
         }
-
     }
 }

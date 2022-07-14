@@ -18,6 +18,7 @@ import com.carto.vectorelements.VectorElement
 import com.example.exploedview.map.MapElementColor
 import com.example.exploedview.util.LogUtil
 import com.example.exploedview.MainActivity
+import com.example.exploedview.MapConst
 import com.example.exploedview.enums.ColorEnum
 
 class VectorElementEditEventListener(private val activity: MainActivity) : VectorEditEventListener() {
@@ -27,7 +28,6 @@ class VectorElementEditEventListener(private val activity: MainActivity) : Vecto
     private var styleSelected: PointStyle? = null
 
     private var modifyElementBounds: MapBounds? = null
-    var withinPolygonArr: MutableList<Polygon>? = null
 
     override fun onElementModify(element: VectorElement?, geometry: Geometry?) {
 
@@ -44,7 +44,7 @@ class VectorElementEditEventListener(private val activity: MainActivity) : Vecto
                 is Polygon -> {
                     element.geometry = geometry as PolygonGeometry
 
-                    withinPolygonArr = mutableListOf()
+                    activity.containsPolygonArr = mutableListOf()
                     modifyElementBounds = element.bounds
 
                 }
@@ -53,7 +53,7 @@ class VectorElementEditEventListener(private val activity: MainActivity) : Vecto
             activity.createPolygonArr.forEach {poly ->
                 val withinPoly = modifyElementBounds?.contains(poly.bounds)
 //                logI(withinPoly.toString())
-                if(withinPoly == true) withinPolygonArr?.add(poly)
+                if(withinPoly == true) activity.containsPolygonArr.add(poly)
             }
 
             // 그룹영역에 포함된 Polygon 배열
@@ -87,12 +87,12 @@ class VectorElementEditEventListener(private val activity: MainActivity) : Vecto
     ): PointStyle? {
         if (null == styleNormal) {
             val builder = PointStyleBuilder()
-            builder.color = MapElementColor.set(ColorEnum.RED, 255)
+            builder.color = MapElementColor.set(ColorEnum.RED)
             builder.size = 15f
             styleNormal = builder.buildStyle()
             builder.size = 15f
             styleVirtual = builder.buildStyle()
-            builder.color = MapElementColor.set(ColorEnum.RED, 255)
+            builder.color = MapElementColor.set(ColorEnum.RED)
             builder.size = 15f
             styleSelected = builder.buildStyle()
         }

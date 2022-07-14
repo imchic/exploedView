@@ -4,9 +4,9 @@ object MapConst {
 
     var SELECT: Boolean = false
     var GROUP: Boolean = false
-    var contains: Boolean = false
+    var CONTAINS: Boolean = false
 
-    const val FILL_OPACITY: Short = 50
+    const val FILL_OPACITY: Short = 125
     const val STROKE_OPACITY: Short = 255
 
     /**
