@@ -3,7 +3,6 @@ package com.example.exploedview.map
 import com.carto.graphics.Color
 import com.carto.styles.*
 import com.carto.vectorelements.Polygon
-import com.example.exploedview.MapConst
 import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.util.LogUtil
 

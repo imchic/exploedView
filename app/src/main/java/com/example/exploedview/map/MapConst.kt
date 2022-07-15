@@ -1,4 +1,6 @@
-package com.example.exploedview
+package com.example.exploedview.map
+
+import com.carto.vectorelements.Polygon
 
 object MapConst {
 
@@ -8,6 +10,11 @@ object MapConst {
 
     const val FILL_OPACITY: Short = 125
     const val STROKE_OPACITY: Short = 255
+
+    const val INCREASE_FLOOR_NUM = 8
+    const val INCREASE_LINE_NUM = 10
+
+    var BASE_EXPLODEDVIEW = mutableListOf<Polygon>()
 
     /**
      *  Google Mercator: 구글지도/빙지도/야후지도/OSM 등 에서 사용중인 좌표계

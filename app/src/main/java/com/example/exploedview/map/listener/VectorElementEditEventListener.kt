@@ -17,11 +17,10 @@ import com.carto.vectorelements.Polygon
 import com.carto.vectorelements.VectorElement
 import com.example.exploedview.map.MapElementColor
 import com.example.exploedview.util.LogUtil
-import com.example.exploedview.MainActivity
-import com.example.exploedview.MapConst
 import com.example.exploedview.enums.ColorEnum
+import com.example.exploedview.map.BaseMap
 
-class VectorElementEditEventListener(private val activity: MainActivity) : VectorEditEventListener() {
+class VectorElementEditEventListener : VectorEditEventListener() {
 
     private var styleNormal: PointStyle? = null
     private var styleVirtual: PointStyle? = null
@@ -44,16 +43,16 @@ class VectorElementEditEventListener(private val activity: MainActivity) : Vecto
                 is Polygon -> {
                     element.geometry = geometry as PolygonGeometry
 
-                    activity.containsPolygonArr = mutableListOf()
+                    BaseMap.containsPolygonArr = mutableListOf()
                     modifyElementBounds = element.bounds
 
                 }
             }
 
-            activity.createPolygonArr.forEach {poly ->
+            BaseMap.createPolygonArr.forEach {poly ->
                 val withinPoly = modifyElementBounds?.contains(poly.bounds)
 //                logI(withinPoly.toString())
-                if(withinPoly == true) activity.containsPolygonArr.add(poly)
+                if(withinPoly == true) BaseMap.containsPolygonArr.add(poly)
             }
 
             // 그룹영역에 포함된 Polygon 배열

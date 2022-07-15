@@ -48,6 +48,4 @@ abstract class BaseActivity<T : ViewDataBinding>
 
     }
 
-    fun httpResultToJsonObject(resultStr: String): JsonObject = JsonParser.parseString(resultStr).asJsonObject
-
 }

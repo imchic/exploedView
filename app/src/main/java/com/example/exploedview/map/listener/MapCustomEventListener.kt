@@ -10,32 +10,42 @@ import com.carto.ui.MapClickInfo
 import com.carto.ui.MapEventListener
 import com.carto.ui.MapView
 import com.carto.vectorelements.*
-import com.example.exploedview.MainActivity
 import com.example.exploedview.enums.ColorEnum
+import com.example.exploedview.map.BaseMap
 import com.example.exploedview.map.MapElementColor
 import com.example.exploedview.map.MapStyle
 import com.example.exploedview.util.LogUtil
 
 class MapCustomEventListener(
-    private val activity: MainActivity,
-    val mapView: MapView?,
-    var source: LocalVectorDataSource?,
-    layer: EditableVectorLayer?,
-    val posArr: MutableList<MapPos>?
+    _mapView: MapView,
+    private var _source: LocalVectorDataSource?,
+    private val _posArr: MutableList<MapPos>?
 ) : MapEventListener() {
 
-    var popup: BalloonPopup? = null
-    var point: Point? = null
-    var line: Line? = null
-    var polygon: Polygon? = null
+    private var _popup: BalloonPopup? = null
+    private var _pointSymbol: Point? = null
+    private var _lineSymbol: Line? = null
+    private var _polygonSymbol: Polygon? = null
+
+    private var _targetLayer: EditableVectorLayer? = null
 
     init {
 
-        activity.selectListener = VectorElementSelectEventListener(activity, layer)
+        for(i in 0 until BaseMap.getLayerCount()){
 
-        layer?.run {
-            vectorEditEventListener = VectorElementEditEventListener(activity)
-            vectorElementEventListener = activity.selectListener
+            val targetLayerNm = BaseMap.getLayerName(i, "name")
+            if(targetLayerNm == "group"){
+                _targetLayer = _mapView.layers.get(i) as EditableVectorLayer?
+                break
+            }
+
+        }
+
+        BaseMap.selectListener = VectorElementSelectEventListener(_targetLayer)
+
+        _targetLayer?.run {
+            vectorEditEventListener = VectorElementEditEventListener()
+            vectorElementEventListener = BaseMap.selectListener
         }
     }
 
@@ -44,7 +54,6 @@ class MapCustomEventListener(
 //        LogUtil.i(mapView?.zoom.toString())
 //        LogUtil.i(mapView?.focusPos.toString())
 //    }
-
 
     override fun onMapClicked(mapClickInfo: MapClickInfo?) {
         super.onMapClicked(mapClickInfo)
@@ -56,7 +65,7 @@ class MapCustomEventListener(
             when (mapClickInfo?.clickType) {
                 ClickType.CLICK_TYPE_SINGLE -> {
 //                    i("single map click!")
-                    posArr?.add(mapClickInfo.clickPos)
+                    _posArr?.add(mapClickInfo.clickPos)
                 }
                 ClickType.CLICK_TYPE_LONG -> i("Long map click!")
                 ClickType.CLICK_TYPE_DOUBLE -> i("Double map click!")
@@ -64,36 +73,33 @@ class MapCustomEventListener(
                 else -> throw Exception("유효하지 않는 이벤트 발생")
             }
 
-            if (popup != null) {
-                source?.remove(popup)
-                popup = null
+            if (_popup != null) {
+                _source?.remove(_popup)
+                _popup = null
             }
 
             val clickPos = mapClickInfo.clickPos
             val popupStyle = MapStyle.setBallonPopupStyle(10)
 
-            val clickPosCnt = posArr?.size
-//            i("clickPosCnt => [$clickPosCnt]")
-
             // 포인트
-            when (clickPosCnt) {
+            when (val clickPosCnt = _posArr?.size) {
 
                 1 -> {
-                    for (pos in posArr!!) {
-                        point = Point(pos, MapStyle.setPointStyle(MapElementColor.set(ColorEnum.BLUE), 13F))
-                        element.add(point)
+                    for (pos in _posArr!!) {
+                        _pointSymbol = Point(pos, MapStyle.setPointStyle(MapElementColor.set(ColorEnum.BLUE), 13F))
+                        element.add(_pointSymbol)
 
-                        popup = BalloonPopup(clickPos, popupStyle, "point", clickPosCnt.toString())
-                        element.add(popup)
+                        _popup = BalloonPopup(clickPos, popupStyle, "point", clickPosCnt.toString())
+                        element.add(_popup)
                     }
                 }
 
                 // 라인
                 2 -> {
-                    for (pos in posArr!!) {
+                    for (pos in _posArr!!) {
                         posVector.add(pos)
                     }
-                    line = Line(
+                    _lineSymbol = Line(
                         posVector,
                         MapStyle.setLineStyle(
                             MapElementColor.set(ColorEnum.BLUE),
@@ -101,18 +107,18 @@ class MapCustomEventListener(
                             8F
                         )
                     )
-                    element.add(line)
+                    element.add(_lineSymbol)
 
-                    popup = BalloonPopup(clickPos, popupStyle, "line", clickPosCnt.toString())
-                    element.add(popup)
+                    _popup = BalloonPopup(clickPos, popupStyle, "line", clickPosCnt.toString())
+                    element.add(_popup)
                 }
 
                 // 폴리곤
                 else -> {
-                    for (pos in posArr!!) {
+                    for (pos in _posArr!!) {
                         posVector.add(pos)
                     }
-                    polygon = Polygon(
+                    _polygonSymbol = Polygon(
                         posVector,
                         MapStyle.setPolygonStyle(
                             MapElementColor.set(ColorEnum.BLUE),
@@ -122,17 +128,17 @@ class MapCustomEventListener(
                     )
 
                     i("click create polygon => $posVector")
-                    element.add(polygon)
+                    element.add(_polygonSymbol)
 
-                    popup = BalloonPopup(clickPos, popupStyle, "polygon", clickPosCnt.toString())
-                    element.add(popup)
+                    _popup = BalloonPopup(clickPos, popupStyle, "polygon", clickPosCnt.toString())
+                    element.add(_popup)
                 }
 
             }
 
             i("element size => ${element.size()}")
-            source?.clear()
-            source?.addAll(element)
+            _source?.clear()
+            _source?.addAll(element)
 
         }
 
