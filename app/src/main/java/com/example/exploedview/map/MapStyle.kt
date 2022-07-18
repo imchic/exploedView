@@ -49,7 +49,10 @@ object MapStyle {
      * @return TextStyle?
      */
     fun setTextStyle(color: Color, fontSize: Float): TextStyle? {
-        _textStyleBuilder.color = color
+        val _color = Color(color.r, color.g, color.b, 255)
+        _textStyleBuilder.color = _color
+        _textStyleBuilder.strokeColor = _color
+        _textStyleBuilder.strokeWidth = 0.5F
         _textStyleBuilder.fontSize = fontSize
         _textStyleBuilder.orientationMode = BillboardOrientation.BILLBOARD_ORIENTATION_FACE_CAMERA_GROUND
         _textStyleBuilder.isScaleWithDPI = false
@@ -85,45 +88,6 @@ object MapStyle {
 //        _ballonPopupStyleBuilder?.rightMargins = BalloonPopupMargins(2, 6, 12, 6)
         _ballonPopupStyleBuilder.placementPriority = 1
         return _ballonPopupStyleBuilder.buildStyle()
-    }
-
-    /**
-     * 폴리곤 선택, 비선택 모듈
-     * @param type String
-     * @param mapPos MapPos
-     */
-    fun togglePolygonStyle(parentsArr: MutableList<Polygon>, childArr: MutableList<Polygon>, type: String) {
-
-        runCatching {
-            parentsArr.filter { x ->
-                childArr.contains(x)
-            }
-        }.onSuccess {
-            it.map { polygon ->
-                when (type) {
-
-                    "default" -> {
-                        polygon.style = setPolygonStyle(
-                            MapElementColor.set(ColorEnum.GREEN),
-                            MapElementColor.set(ColorEnum.GREEN),
-                            2F
-                        )
-                    }
-
-                    "group" -> {
-                        polygon.style = setPolygonStyle(
-                            MapElementColor.set(ColorEnum.PURPLE),
-                            MapElementColor.set(ColorEnum.PURPLE),
-                            2F
-                        )
-                    }
-
-                }
-            }
-        }
-        .onFailure {
-            LogUtil.e(it.toString())
-        }
     }
 
 }

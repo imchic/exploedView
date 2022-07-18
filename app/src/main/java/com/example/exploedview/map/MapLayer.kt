@@ -9,6 +9,7 @@ import com.carto.geometry.MultiPolygonGeometry
 import com.carto.vectorelements.Polygon
 import com.carto.vectorelements.Text
 import com.carto.vectorelements.VectorElementVector
+import com.example.exploedview.MapActivity
 import com.example.exploedview.base.BaseException
 import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.extension.Extensions.max
@@ -24,10 +25,6 @@ object MapLayer {
     private lateinit var west: MapPos
     private lateinit var north: MapPos
     private lateinit var east: MapPos
-
-    private lateinit var addPolygon: Polygon
-    private lateinit var addText: Text
-    private lateinit var vector: MapPosVector
 
     var floorElement: VectorElementVector = VectorElementVector()
     var lineElement: VectorElementVector = VectorElementVector()
@@ -74,6 +71,7 @@ object MapLayer {
                         createPolygon.setMetaDataElement("ho", Variant(hoNm))
                         createPolygon.setMetaDataElement("hu", Variant(huNum))
                         createPolygon.setMetaDataElement("cPoedTxt", Variant(cPoedTxt))
+                        createPolygon.setMetaDataElement("select", Variant("n"))
 
                         polygonArr.add(createPolygon)
                         elements.add(createPolygon)
@@ -129,7 +127,7 @@ object MapLayer {
      */
     fun addFloor(source: LocalVectorDataSource?, polygonArr: MutableList<Polygon>) {
 
-        setFilterArr(source, polygonArr, "floorUp")
+        setFilterArr(source, polygonArr, MapLayerName.ADD_FLOOR)
 
         filterArr?.map {
 
@@ -139,11 +137,11 @@ object MapLayer {
             north = MapPos(it.bounds.max.x, it.bounds.max.y + MapConst.INCREASE_FLOOR_NUM)
             east = MapPos(it.bounds.min.x, it.bounds.max.y + MapConst.INCREASE_FLOOR_NUM)
 
-            vector = MapPosVector()
-            vector.apply { add(south); add(west); add(north); add(east) }
+            val floorVector = MapPosVector()
+            floorVector.apply { add(south); add(west); add(north); add(east) }
 
-            addPolygon = Polygon(
-                vector,
+            val addFloor = Polygon(
+                floorVector,
                 MapStyle.setPolygonStyle(
                     MapElementColor.set(ColorEnum.BLUE),
                     MapElementColor.set(ColorEnum.BLUE),
@@ -152,18 +150,18 @@ object MapLayer {
             )
 
             val newFloor = increaseFloor(it)
-            addPolygon.setMetaDataElement("ho", Variant(newFloor.toString()))
+            addFloor.setMetaDataElement("ho", Variant(newFloor.toString()))
 
-            addText = Text(
-                addPolygon.geometry.centerPos,
+            val newFloorText = Text(
+                addFloor.geometry.centerPos,
                 MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 20F),
                 newFloor.toString()
             )
 
-            polygonArr.add(addPolygon)
+            polygonArr.add(addFloor)
 
-            floorElement.add(addPolygon)
-            floorElement.add(addText)
+            floorElement.add(addFloor)
+            floorElement.add(newFloorText)
         }
 
         source?.addAll(floorElement)
@@ -177,7 +175,7 @@ object MapLayer {
      */
     fun addLine(source: LocalVectorDataSource?, polygonArr: MutableList<Polygon>) {
 
-        setFilterArr(source, polygonArr, "addLine")
+        setFilterArr(source, polygonArr, MapLayerName.ADD_LINE)
 
         filterArr?.map {
 
@@ -187,14 +185,13 @@ object MapLayer {
             north = MapPos(it.bounds.max.x + MapConst.INCREASE_LINE_NUM, it.bounds.max.y)
             east = MapPos(it.bounds.max.x, it.bounds.max.y)
 
-            vector = MapPosVector()
-            vector.apply { add(south); add(west); add(north); add(east) }
+            val lineVector = MapPosVector()
+            lineVector.apply { add(south); add(west); add(north); add(east) }
 
             val newLine = increasLine(it)
-            addPolygon.setMetaDataElement("ho", Variant(newLine.toString()))
 
-            addPolygon = Polygon(
-                vector,
+            val addLine = Polygon(
+                lineVector,
                 MapStyle.setPolygonStyle(
                     MapElementColor.set(ColorEnum.HOTPINK),
                     MapElementColor.set(ColorEnum.HOTPINK),
@@ -202,19 +199,29 @@ object MapLayer {
                 )
             )
 
-            addText = Text(
-                addPolygon.geometry.centerPos,
+            addLine.setMetaDataElement("ho", Variant(newLine.toString()))
+
+            val lineText = Text(
+                addLine.geometry.centerPos,
                 MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 20F),
                 newLine.toString()
             )
 
-            polygonArr.add(addPolygon)
+            polygonArr.add(addLine)
 
-            lineElement.add(addPolygon)
-            lineElement.add(addText)
+            lineElement.add(addLine)
+            lineElement.add(lineText)
         }
 
         source?.addAll(lineElement)
+    }
+
+    /**
+     * 호실 추가
+     * @param source LocalVectorDataSource?
+     */
+    fun addHo(activity: MapActivity, source: LocalVectorDataSource?){
+        activity.showToast("addHo")
     }
 
     /**
@@ -226,7 +233,7 @@ object MapLayer {
     private fun setFilterArr(
         source: LocalVectorDataSource?,
         polygonArr: MutableList<Polygon>,
-        type: String
+        type: MapLayerName
     ) {
         clear(source)
         maxVal = 0
@@ -234,17 +241,18 @@ object MapLayer {
         filterArr?.clear()
 
         when (type) {
-            "floorUp" -> {
+            MapLayerName.ADD_FLOOR -> {
                 polygonArr.map { maxArr.add(it.bounds.max.y.toInt()) }
                 maxVal = maxArr.max(maxArr)
                 filterArr = polygonArr.filter { it.bounds.max.y == maxVal?.toDouble() } as MutableList<Polygon>
             }
-            "addLine" -> {
+            MapLayerName.ADD_LINE -> {
                 polygonArr.map { maxArr.add(it.bounds.max.x.toInt()) }
                 maxVal = maxArr.max(maxArr)
                 filterArr = polygonArr.filter { it.bounds.max.x.toInt() == maxVal } as MutableList<Polygon>
 
             }
+            else -> {}
         }
 
     }

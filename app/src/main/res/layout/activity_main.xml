@@ -8,7 +8,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/transparent"
-        tools:context=".MainActivity">
+        tools:context=".MapActivity">
 
     <com.carto.ui.MapView
             android:id="@+id/cartoMapView"
@@ -90,18 +90,18 @@
     />
 
 
-    <Button
-            android:id="@+id/btn_select"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:text="객체선택"
-            android:enabled="true"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/btn_area"
-            app:layout_constraintHorizontal_chainStyle="spread"
-    />
+<!--    <Button-->
+<!--            android:id="@+id/btn_select"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_margin="4dp"-->
+<!--            android:text="객체선택"-->
+<!--            android:enabled="true"-->
+<!--            app:layout_constraintTop_toTopOf="parent"-->
+<!--            app:layout_constraintLeft_toLeftOf="parent"-->
+<!--            app:layout_constraintRight_toLeftOf="@id/btn_area"-->
+<!--            app:layout_constraintHorizontal_chainStyle="spread"-->
+<!--    />-->
 
     <Button
             android:id="@+id/btn_area"
@@ -111,7 +111,7 @@
             android:text="그룹영역 생성"
             android:enabled="true"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintLeft_toRightOf="@id/btn_select"
+            app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
     />
 

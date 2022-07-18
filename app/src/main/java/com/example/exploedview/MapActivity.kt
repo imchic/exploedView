@@ -6,20 +6,21 @@ import com.example.exploedview.databinding.ActivityMainBinding
 import com.example.exploedview.map.BaseMap
 import com.example.exploedview.map.MapLayer
 
-class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), View.OnClickListener {
+class MapActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), View.OnClickListener {
 
     override fun initView() {
         super.initView()
 
         binding.apply {
 
-            BaseMap.init(binding.cartoMapView, this@MainActivity, baseContext)
+            BaseMap.init(binding.cartoMapView, this@MapActivity, baseContext)
 
-            this@MainActivity.run {
+            this@MapActivity.run {
                 btnAddFloor.setOnClickListener(this)
                 btnAddLine.setOnClickListener(this)
                 btnArea.setOnClickListener(this)
                 btnReset.setOnClickListener(this)
+                btnAddHo.setOnClickListener(this)
             }
 
         }
@@ -31,6 +32,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(R.layout.activity_main), 
             R.id.btn_add_line -> MapLayer.addLine(BaseMap.addLineDataSource, BaseMap.createPolygonArr)
             R.id.btn_area -> BaseMap.contains(BaseMap.createPolygonArr, BaseMap.containsPolygonArr)
             R.id.btn_reset -> BaseMap.clear()
+            R.id.btn_add_ho -> MapLayer.addHo(this@MapActivity, BaseMap.addHoDataSource)
         }
     }
 

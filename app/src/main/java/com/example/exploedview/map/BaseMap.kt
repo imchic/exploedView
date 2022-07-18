@@ -11,12 +11,12 @@ import com.carto.datasources.LocalVectorDataSource
 import com.carto.geometry.*
 import com.carto.layers.EditableVectorLayer
 import com.carto.layers.Layer
-import com.carto.layers.VectorLayer
 import com.carto.projections.Projection
 import com.carto.ui.MapView
 import com.carto.vectorelements.Polygon
-import com.example.exploedview.MainActivity
+import com.example.exploedview.MapActivity
 import com.example.exploedview.base.BaseException
+import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.map.listener.MapCustomEventListener
 import com.example.exploedview.map.listener.VectorElementSelectEventListener
 import com.example.exploedview.util.LogUtil
@@ -25,7 +25,7 @@ import com.example.exploedview.util.LogUtil
 object BaseMap {
 
     private lateinit var _context: Context
-    private lateinit var _activity: MainActivity
+    private lateinit var _activity: MapActivity
 
     // map
     private lateinit var _mapView: MapView
@@ -33,16 +33,18 @@ object BaseMap {
     private lateinit var _proj: Projection
 
     // source
-    private var explodeViewSource: LocalVectorDataSource? = null
-    private var groupLayerSource: LocalVectorDataSource? = null
+    private var explodedViewSource: LocalVectorDataSource? = null
+    var groupLayerSource: LocalVectorDataSource? = null
     var floorUpDataSource: LocalVectorDataSource? = null
     var addLineDataSource: LocalVectorDataSource? = null
+    var addHoDataSource: LocalVectorDataSource? = null
 
     // layer
-    private var explodeViewLayer: VectorLayer? = null
+    private var explodedViewLayer: EditableVectorLayer? = null
     private var groupLayer: EditableVectorLayer? = null
-    private var floorUpLayer: VectorLayer? = null
-    private var addLineLayer: VectorLayer? = null
+    private var floorUpLayer: EditableVectorLayer? = null
+    private var addLineLayer: EditableVectorLayer? = null
+    private var addHoLayer: EditableVectorLayer? = null
 
     // element arr
     var createPolygonArr = mutableListOf<Polygon>()
@@ -65,7 +67,7 @@ object BaseMap {
     fun init(mapView: MapView, activity: Activity, context: Context) {
 
         _context = context
-        _activity = activity as MainActivity
+        _activity = activity as MapActivity
 
         _mapView = mapView
         _mapOpt = _mapView.options
@@ -80,17 +82,18 @@ object BaseMap {
 
         setInitZoomAndPos(22.054665.toFloat(), MapPos(10.226771, 13.399454), 0.5F)
 
-        explodeViewSource = LocalVectorDataSource(_proj)
+        explodedViewSource = LocalVectorDataSource(_proj)
         groupLayerSource = LocalVectorDataSource(_proj)
         floorUpDataSource = LocalVectorDataSource(_proj)
         addLineDataSource = LocalVectorDataSource(_proj)
+        addHoDataSource = LocalVectorDataSource(_proj)
 
-        val layerNameArr = mutableListOf("explodeView", "group", "floorUp", "addLine")
-        val layerArr = mutableListOf(explodeViewLayer, groupLayer, floorUpLayer, addLineLayer)
+//        val layerNameArr = mutableListOf("explodedView", "group", "floorUp", "addLine")
+        val layerArr = mutableListOf(explodedViewLayer, groupLayer, floorUpLayer, addLineLayer, addHoLayer)
 
-        setLayer(layerNameArr, layerArr)
+        setLayer(layerArr)
 
-        MapLayer.explodedView(_activity, explodeViewSource, createPolygonArr)
+        MapLayer.explodedView(_activity, explodedViewSource, createPolygonArr)
 
         _mapView.mapEventListener = MapCustomEventListener(_mapView, groupLayerSource, clickPosArr)
 
@@ -132,41 +135,48 @@ object BaseMap {
     /**
      * 레이어 세팅
      */
-    private fun setLayer(names: MutableList<String>, layers: MutableList<VectorLayer?>) {
+    private fun setLayer(layers: MutableList<EditableVectorLayer?>) {
 
         var source: LocalVectorDataSource?
         val nameArr = mutableListOf<String>()
 
-        names.mapIndexed { index, name ->
+        val enums = enumValues<MapLayerName>()
+
+        enums.mapIndexed { index, name ->
             when (name) {
-                "explodeView" -> {
-                    source = explodeViewSource
-                    layers[index] = VectorLayer(source)
+                MapLayerName.EXPLODED_VIEW -> {
+                    source = explodedViewSource
+                    layers[index] = EditableVectorLayer(source)
                 }
-                "group" -> {
+                MapLayerName.GROUP -> {
                     source = groupLayerSource
                     layers[index] = EditableVectorLayer(source)
                 }
-                "floorUp" -> {
+                MapLayerName.ADD_FLOOR -> {
                     source = floorUpDataSource
-                    layers[index] = VectorLayer(source)
+                    layers[index] = EditableVectorLayer(source)
                 }
-                "addLine" -> {
+                MapLayerName.ADD_LINE -> {
                     source = addLineDataSource
-                    layers[index] = VectorLayer(source)
+                    layers[index] = EditableVectorLayer(source)
+                }
+                MapLayerName.ADD_HO -> {
+                    source = addHoDataSource
+                    layers[index] = EditableVectorLayer(source)
                 }
                 else -> throw BaseException("잘못된 레이어 명입니다.")
             }
 
-            setLayerName(layers[index], "name", Variant(name))
+            setLayerName(layers[index], "name", Variant(name.value))
             _mapView.layers.add(layers[index])
 
-        }.also {
+        }
+        .also {
             for (i in 0 until getLayerCount()) {
                 nameArr.add(_mapView.layers.get(i).metaData.get("name").string)
             }
+            LogUtil.i("생성된 레이어 이름 : ${nameArr}, 현재 생성된 레이어의 갯수 : ${getLayerCount()}")
         }
-        LogUtil.i("생성된 레이어 이름 : ${nameArr}, 현재 생성된 레이어의 갯수 : ${getLayerCount()}")
     }
 
 
@@ -184,7 +194,7 @@ object BaseMap {
      * @param key String
      * @return String?
      */
-    fun getLayerName(index: Int, key: String): String? = _mapView.layers.get(index).getMetaDataElement(key).string
+    fun getLayerName(index: Int, key: String): String = _mapView.layers.get(index).getMetaDataElement(key).string
 
     /**
      * 레이어의 갯수
@@ -206,12 +216,8 @@ object BaseMap {
         MapLayer.floorElement.clear()
         MapLayer.lineElement.clear()
 
-        if (MapConst.GROUP) {
-            MapStyle.togglePolygonStyle(createPolygonArr, createPolygonArr, "default")
-        }
-
-        explodeViewSource?.clear()
-        MapLayer.explodedView(_context, explodeViewSource, BaseMap.createPolygonArr)
+        explodedViewSource?.clear()
+        MapLayer.explodedView(_context, explodedViewSource, createPolygonArr)
 
         _activity.showToast("clear")
     }
@@ -228,16 +234,12 @@ object BaseMap {
         runCatching {
             if (!bool) throw BaseException("그룹영역이 지정되지 않았습니다. \n 그룹영역을 드래그해주세요.")
         }.onSuccess {
-
-            //성공시만 실행
             clickPosArr.clear()
             groupLayerSource?.clear()
 
-            MapStyle.togglePolygonStyle(parents, child, "group")
-            MapConst.GROUP = true
+            group(parents, child)
 
         }.onFailure { it: Throwable ->
-            //실패시만 실행 (try - catch문의 catch와 유사)
             LogUtil.e("group status: $bool, $it")
             _activity.showToast(it.message)
         }
@@ -248,7 +250,7 @@ object BaseMap {
      * @param it Polygon
      * @param value Int
      */
-    fun addFeatures(geom: Geometry, value: Int) {
+    fun addFeatures(geom: Geometry?, value: Int) {
 
         runCatching {
             geom ?: throw BaseException("Feature 타입에 필요한 지오메트리가 존재하지 않습니다.")
@@ -278,6 +280,54 @@ object BaseMap {
         }
 
     }
+
+    /**
+     * 객체 선택 및 비선택
+     * @param geometry Geometry
+     */
+    fun select(geometry: Geometry) {
+        createPolygonArr
+            .filter { it.geometry == geometry }
+            .map {
+
+                when (it.getMetaDataElement("select").string) {
+                    "n" -> {
+                        it.style = MapStyle.setPolygonStyle(
+                            MapElementColor.set(ColorEnum.YELLOW),
+                            MapElementColor.set(ColorEnum.YELLOW),
+                            2F
+                        )
+                        it.setMetaDataElement("select", Variant("y"))
+                    }
+                    "y" -> {
+                        it.style = MapStyle.setPolygonStyle(
+                            MapElementColor.set(ColorEnum.GREEN),
+                            MapElementColor.set(ColorEnum.GREEN),
+                            2F
+                        )
+                        it.setMetaDataElement("select", Variant("n"))
+                    }
+                }
+
+            }
+    }
+
+    /**
+     * 부모 영역 내 포함된 그룹영역
+     * @param parnnts MutableList<Polygon>
+     * @param child MutableList<Polygon>
+     */
+    fun group(parnnts: MutableList<Polygon>, child: MutableList<Polygon>){
+        parnnts
+            .filter { child.contains(it) }
+            .map{
+                it.style = MapStyle.setPolygonStyle(
+                    MapElementColor.set(ColorEnum.PURPLE),
+                    MapElementColor.set(ColorEnum.PURPLE),
+                    2F
+                )
+            }
+        }
 
 
 }

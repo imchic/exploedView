@@ -4,6 +4,7 @@ import com.carto.core.MapPos
 import com.carto.core.MapPosVector
 import com.carto.datasources.LocalVectorDataSource
 import com.carto.layers.EditableVectorLayer
+import com.carto.layers.Layer
 import com.carto.styles.LineJoinType
 import com.carto.ui.ClickType
 import com.carto.ui.MapClickInfo
@@ -13,13 +14,12 @@ import com.carto.vectorelements.*
 import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.map.BaseMap
 import com.example.exploedview.map.MapElementColor
+import com.example.exploedview.map.MapLayerName
 import com.example.exploedview.map.MapStyle
 import com.example.exploedview.util.LogUtil
 
 class MapCustomEventListener(
-    _mapView: MapView,
-    private var _source: LocalVectorDataSource?,
-    private val _posArr: MutableList<MapPos>?
+    _mapView: MapView, private var _source: LocalVectorDataSource?, private val _posArr: MutableList<MapPos>?
 ) : MapEventListener() {
 
     private var _popup: BalloonPopup? = null
@@ -27,26 +27,42 @@ class MapCustomEventListener(
     private var _lineSymbol: Line? = null
     private var _polygonSymbol: Polygon? = null
 
-    private var _targetLayer: EditableVectorLayer? = null
+    private var _targetLayerNm: String = ""
+    private var _targetLayerArr: MutableList<Layer>? = null
 
     init {
 
-        for(i in 0 until BaseMap.getLayerCount()){
+        _targetLayerArr = mutableListOf()
 
-            val targetLayerNm = BaseMap.getLayerName(i, "name")
-            if(targetLayerNm == "group"){
-                _targetLayer = _mapView.layers.get(i) as EditableVectorLayer?
-                break
+        for (i in 0 until BaseMap.getLayerCount()) {
+
+            _targetLayerNm = BaseMap.getLayerName(i, "name")
+
+            _targetLayerNm.run {
+                when (this) {
+                    MapLayerName.GROUP.value, MapLayerName.EXPLODED_VIEW.value, MapLayerName.ADD_FLOOR.value, MapLayerName.ADD_LINE.value -> {
+                        _targetLayerArr?.add(_mapView.layers.get(i))
+                    }
+                    else -> {
+                        return@run
+                    }
+                }
             }
 
         }
 
-        BaseMap.selectListener = VectorElementSelectEventListener(_targetLayer)
+        _targetLayerArr?.map {
+            BaseMap.selectListener = VectorElementSelectEventListener(it as EditableVectorLayer)
 
-        _targetLayer?.run {
-            vectorEditEventListener = VectorElementEditEventListener()
-            vectorElementEventListener = BaseMap.selectListener
+            it.run {
+                if (it.getMetaDataElement("name").string == MapLayerName.GROUP.value) {
+                    vectorEditEventListener = VectorElementEditEventListener(BaseMap.groupLayerSource)
+                }
+                vectorElementEventListener = BaseMap.selectListener
+
+            }
         }
+
     }
 
 //    override fun onMapMoved() {
@@ -86,10 +102,10 @@ class MapCustomEventListener(
 
                 1 -> {
                     for (pos in _posArr!!) {
-                        _pointSymbol = Point(pos, MapStyle.setPointStyle(MapElementColor.set(ColorEnum.BLUE), 13F))
+                        _pointSymbol = Point(pos, MapStyle.setPointStyle(MapElementColor.set(ColorEnum.CYAN), 13F))
                         element.add(_pointSymbol)
 
-                        _popup = BalloonPopup(clickPos, popupStyle, "point", clickPosCnt.toString())
+                        _popup = BalloonPopup(_pointSymbol?.geometry?.centerPos, popupStyle, "선 3개 이상부터 가능합니다.", clickPosCnt.toString())
                         element.add(_popup)
                     }
                 }
@@ -100,16 +116,13 @@ class MapCustomEventListener(
                         posVector.add(pos)
                     }
                     _lineSymbol = Line(
-                        posVector,
-                        MapStyle.setLineStyle(
-                            MapElementColor.set(ColorEnum.BLUE),
-                            LineJoinType.LINE_JOIN_TYPE_MITER,
-                            8F
+                        posVector, MapStyle.setLineStyle(
+                            MapElementColor.set(ColorEnum.CYAN), LineJoinType.LINE_JOIN_TYPE_MITER, 8F
                         )
                     )
                     element.add(_lineSymbol)
 
-                    _popup = BalloonPopup(clickPos, popupStyle, "line", clickPosCnt.toString())
+                    _popup = BalloonPopup(_lineSymbol?.geometry?.centerPos, popupStyle, "선 3개이상부터 가능합니다.", clickPosCnt.toString())
                     element.add(_popup)
                 }
 
@@ -119,18 +132,15 @@ class MapCustomEventListener(
                         posVector.add(pos)
                     }
                     _polygonSymbol = Polygon(
-                        posVector,
-                        MapStyle.setPolygonStyle(
-                            MapElementColor.set(ColorEnum.BLUE),
-                            MapElementColor.set(ColorEnum.BLUE),
-                            2F
+                        posVector, MapStyle.setPolygonStyle(
+                            MapElementColor.set(ColorEnum.CYAN), MapElementColor.set(ColorEnum.CYAN), 2F
                         )
                     )
 
                     i("click create polygon => $posVector")
                     element.add(_polygonSymbol)
 
-                    _popup = BalloonPopup(clickPos, popupStyle, "polygon", clickPosCnt.toString())
+                    _popup = BalloonPopup(_polygonSymbol?.geometry?.centerPos, popupStyle, "꼭지점을 이용하여 영역을 지정해주세요.", clickPosCnt.toString())
                     element.add(_popup)
                 }
 
