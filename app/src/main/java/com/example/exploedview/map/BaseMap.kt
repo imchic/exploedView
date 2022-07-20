@@ -13,6 +13,8 @@ import com.carto.layers.EditableVectorLayer
 import com.carto.layers.Layer
 import com.carto.projections.Projection
 import com.carto.ui.MapView
+import com.carto.utils.AssetPackage
+import com.carto.utils.BitmapUtils
 import com.carto.vectorelements.Polygon
 import com.example.exploedview.MapActivity
 import com.example.exploedview.base.BaseException
@@ -30,7 +32,7 @@ object BaseMap {
     // map
     private lateinit var _mapView: MapView
     private lateinit var _mapOpt: Options
-    private lateinit var _proj: Projection
+    lateinit var _proj: Projection
 
     // source
     private var explodedViewSource: LocalVectorDataSource? = null
@@ -49,6 +51,8 @@ object BaseMap {
     // element arr
     var createPolygonArr = mutableListOf<Polygon>()
     var containsPolygonArr = mutableListOf<Polygon>()
+    var selectPolygonArr = mutableListOf<Polygon>()
+
     var clickPosArr = mutableListOf<MapPos>()
 
     // listener
@@ -78,9 +82,11 @@ object BaseMap {
             tiltRange = MapRange(90f, 90f) // 틸트 고정
             isRotatable = false // 회전
             isZoomGestures = false
+//            backgroundBitmap = BitmapUtils.loadBitmapFromAssets("ci.png")
         }
 
-        setInitZoomAndPos(22.054665.toFloat(), MapPos(10.226771, 13.399454), 0.5F)
+//        setInitZoomAndPos(22.054665.toFloat(), MapPos(10.226771, 13.399454), 0.5F)
+        setInitZoomAndPos(5.toFloat(), _proj.fromWgs84(MapPos(10.226771, 13.399454)), 0.5F)
 
         explodedViewSource = LocalVectorDataSource(_proj)
         groupLayerSource = LocalVectorDataSource(_proj)
@@ -97,6 +103,8 @@ object BaseMap {
 
         _mapView.mapEventListener = MapCustomEventListener(_mapView, groupLayerSource, clickPosArr)
 
+        MapStyle.createGeoJSONLayer(_activity, _mapView)
+
 
     }
 
@@ -110,6 +118,7 @@ object BaseMap {
         _mapView.apply {
             setZoom(zoom, duration)
             setFocusPos(pos, duration)
+//            setFocusPos(_proj.fromWgs84(pos), duration)
         }
     }
 
@@ -128,7 +137,7 @@ object BaseMap {
         val json = String(buffer, charset("UTF-8"))
         LogUtil.i("Result GeoJSON => $json")
         val reader = GeoJSONGeometryReader()
-//        reader.targetProjection = _proj
+        reader.targetProjection = _proj
         return reader.readFeatureCollection(json)
     }
 
@@ -219,6 +228,8 @@ object BaseMap {
         explodedViewSource?.clear()
         MapLayer.explodedView(_context, explodedViewSource, createPolygonArr)
 
+        selectPolygonArr.clear()
+
         _activity.showToast("clear")
     }
 
@@ -298,6 +309,7 @@ object BaseMap {
                             2F
                         )
                         it.setMetaDataElement("select", Variant("y"))
+                        selectPolygonArr.add(it)
                     }
                     "y" -> {
                         it.style = MapStyle.setPolygonStyle(
@@ -306,10 +318,16 @@ object BaseMap {
                             2F
                         )
                         it.setMetaDataElement("select", Variant("n"))
+                        selectPolygonArr.remove(it)
+                    }
+                    else -> {
+                        throw BaseException("잘못된 select Event 발생")
                     }
                 }
 
             }
+
+            LogUtil.d("선택된 전개도 폴리곤의 개수 : ${selectPolygonArr.size}")
     }
 
     /**

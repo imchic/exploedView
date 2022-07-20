@@ -1,10 +1,20 @@
 package com.example.exploedview.map
 
+import com.carto.core.Variant
+import com.carto.datasources.GeoJSONVectorTileDataSource
 import com.carto.graphics.Color
+import com.carto.layers.VectorTileLayer
 import com.carto.styles.*
-import com.carto.vectorelements.Polygon
+import com.carto.ui.MapView
+import com.carto.utils.AssetUtils
+import com.carto.utils.ZippedAssetPackage
+import com.carto.vectortiles.MBVectorTileDecoder
+import com.example.exploedview.MapActivity
+import com.example.exploedview.base.BaseException
 import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.util.LogUtil
+import java.io.InputStream
+
 
 object MapStyle {
 
@@ -23,9 +33,12 @@ object MapStyle {
      * @return PointStyle?
      */
     fun setPointStyle(color: Color, size: Float): PointStyle? {
-        _pointStyleBuilder.color = color
-        _pointStyleBuilder.size = size
-        return _pointStyleBuilder.buildStyle()
+        _pointStyleBuilder.apply {
+            this.color = color
+            this.size = size
+            return this.buildStyle()
+        }
+
     }
 
     /**
@@ -36,10 +49,13 @@ object MapStyle {
      * @return LineStyle?
      */
     fun setLineStyle(color: Color, type: LineJoinType, width: Float): LineStyle? {
-        _lineStyleBuilder.color = color
-        _lineStyleBuilder.lineJoinType = type
-        _lineStyleBuilder.width = width
-        return _lineStyleBuilder.buildStyle()
+        _lineStyleBuilder.apply {
+            this.color = color
+            lineJoinType = type
+            this.width = width
+            return buildStyle()
+        }
+
     }
 
     /**
@@ -50,13 +66,15 @@ object MapStyle {
      */
     fun setTextStyle(color: Color, fontSize: Float): TextStyle? {
         val _color = Color(color.r, color.g, color.b, 255)
-        _textStyleBuilder.color = _color
-        _textStyleBuilder.strokeColor = _color
-        _textStyleBuilder.strokeWidth = 0.5F
-        _textStyleBuilder.fontSize = fontSize
-        _textStyleBuilder.orientationMode = BillboardOrientation.BILLBOARD_ORIENTATION_FACE_CAMERA_GROUND
-        _textStyleBuilder.isScaleWithDPI = false
-        return _textStyleBuilder.buildStyle()
+        _textStyleBuilder.run {
+            this.color = _color
+            strokeColor = _color
+            strokeWidth = 0.1F
+            this.fontSize = fontSize
+            this.textMargins = TextMargins(6, 6, 6, 6)
+            return this.buildStyle()
+        }
+
     }
 
     /**
@@ -67,7 +85,8 @@ object MapStyle {
      * @return PolygonStyle?
      */
     fun setPolygonStyle(polygonColor: Color, lineColor: Color, lineWidth: Float): PolygonStyle? {
-        _polygonStyleBuilder.color = polygonColor
+        val _color = Color(polygonColor.r, polygonColor.g, polygonColor.b, 75)
+        _polygonStyleBuilder.color = _color
         _lineStyleBuilder.color = lineColor
         _lineStyleBuilder.width = lineWidth
         _polygonStyleBuilder.lineStyle = _lineStyleBuilder.buildStyle()
@@ -80,14 +99,46 @@ object MapStyle {
      * @return BalloonPopupStyle?
      */
     fun setBallonPopupStyle(radius: Int): BalloonPopupStyle? {
-        _ballonPopupStyleBuilder.cornerRadius = radius
-        _ballonPopupStyleBuilder.leftColor = Color(MapConst.STROKE_OPACITY, 0, 0, 0)
-//        _ballonPopupStyleBuilder?.leftMargins = BalloonPopupMargins(6, 6, 6, 6)
-//        _ballonPopupStyleBuilder?.leftImage = BitmapUtils.createBitmapFromAndroidBitmap(infoImage)
-//        _ballonPopupStyleBuilder?.rightImage = BitmapUtils.createBitmapFromAndroidBitmap(arrowImage)
-//        _ballonPopupStyleBuilder?.rightMargins = BalloonPopupMargins(2, 6, 12, 6)
-        _ballonPopupStyleBuilder.placementPriority = 1
+
+        _ballonPopupStyleBuilder.apply {
+//            cornerRadius = radius
+            leftColor = Color(MapConst.STROKE_OPACITY, 0, 0, 0)
+            leftMargins = BalloonPopupMargins(6, 6, 6, 6)
+            rightMargins = BalloonPopupMargins(2, 6, 12, 6)
+            leftColor = MapElementColor.set(ColorEnum.TEAL)
+            titleColor = MapElementColor.set(ColorEnum.NAVY)
+            titleFontSize = 16
+            descriptionColor = MapElementColor.set(ColorEnum.GRAY)
+            descriptionFontSize = 14
+            placementPriority = 1
+        }
+
         return _ballonPopupStyleBuilder.buildStyle()
+    }
+
+    fun createGeoJSONLayer(activity: MapActivity, mapView: MapView) {
+
+        val dataSource = GeoJSONVectorTileDataSource(0, mapView.zoom.toInt())
+
+        try {
+            val `is`: InputStream = activity.assets.open("test.geojson")
+            val sb = StringBuilder()
+            var ch: Int
+            while (`is`.read().also { ch = it } != -1) {
+                sb.append(ch.toChar())
+            }
+            val data: Variant = Variant.fromString(sb.toString())
+            val layerIdx = dataSource.createLayer("items")
+            dataSource.setLayerGeoJSON(layerIdx, data)
+            val styleAsset = ZippedAssetPackage(AssetUtils.loadAsset("test.zip"))
+            val styleSet = CompiledStyleSet(styleAsset, "voyager")
+            val decoder = MBVectorTileDecoder(styleSet)
+            val layer = VectorTileLayer(dataSource, decoder)
+            mapView.layers.add(layer)
+        } catch (e: Exception) {
+            LogUtil.e(e.toString())
+        }
+
     }
 
 }

@@ -94,18 +94,22 @@ class MapCustomEventListener(
                 _popup = null
             }
 
-            val clickPos = mapClickInfo.clickPos
+            mapClickInfo.clickPos
             val popupStyle = MapStyle.setBallonPopupStyle(10)
+            val clickPosCnt: Int? = _posArr?.size
+            val clickPosCntTxt = "포인트의 개수 : $clickPosCnt"
 
             // 포인트
-            when (val clickPosCnt = _posArr?.size) {
+            when (clickPosCnt) {
 
                 1 -> {
                     for (pos in _posArr!!) {
-                        _pointSymbol = Point(pos, MapStyle.setPointStyle(MapElementColor.set(ColorEnum.CYAN), 13F))
+                        _pointSymbol = Point(pos, MapStyle.setPointStyle(MapElementColor.set(ColorEnum.MAGENTA), 13F))
                         element.add(_pointSymbol)
 
-                        _popup = BalloonPopup(_pointSymbol?.geometry?.centerPos, popupStyle, "선 3개 이상부터 가능합니다.", clickPosCnt.toString())
+                        _popup = BalloonPopup(_pointSymbol?.geometry?.centerPos, popupStyle, "선 3개 이상부터 가능합니다.",
+                            clickPosCntTxt
+                        )
                         element.add(_popup)
                     }
                 }
@@ -117,12 +121,12 @@ class MapCustomEventListener(
                     }
                     _lineSymbol = Line(
                         posVector, MapStyle.setLineStyle(
-                            MapElementColor.set(ColorEnum.CYAN), LineJoinType.LINE_JOIN_TYPE_MITER, 8F
+                            MapElementColor.set(ColorEnum.MAGENTA), LineJoinType.LINE_JOIN_TYPE_MITER, 8F
                         )
                     )
                     element.add(_lineSymbol)
 
-                    _popup = BalloonPopup(_lineSymbol?.geometry?.centerPos, popupStyle, "선 3개이상부터 가능합니다.", clickPosCnt.toString())
+                    _popup = BalloonPopup(_lineSymbol?.geometry?.centerPos, popupStyle, "선 3개이상부터 가능합니다.", clickPosCntTxt)
                     element.add(_popup)
                 }
 
@@ -133,14 +137,14 @@ class MapCustomEventListener(
                     }
                     _polygonSymbol = Polygon(
                         posVector, MapStyle.setPolygonStyle(
-                            MapElementColor.set(ColorEnum.CYAN), MapElementColor.set(ColorEnum.CYAN), 2F
+                            MapElementColor.set(ColorEnum.MAGENTA), MapElementColor.set(ColorEnum.MAGENTA), 2F
                         )
                     )
 
                     i("click create polygon => $posVector")
                     element.add(_polygonSymbol)
 
-                    _popup = BalloonPopup(_polygonSymbol?.geometry?.centerPos, popupStyle, "꼭지점을 이용하여 영역을 지정해주세요.", clickPosCnt.toString())
+                    _popup = BalloonPopup(_polygonSymbol?.geometry?.centerPos, popupStyle, "꼭지점을 이용하여 영역을 지정해주세요.", clickPosCntTxt)
                     element.add(_popup)
                 }
 

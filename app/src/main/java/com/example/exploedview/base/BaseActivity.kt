@@ -40,7 +40,7 @@ abstract class BaseActivity<T : ViewDataBinding>
     fun showToast(msg: String?){
 
         if(toast == null){
-            toast = Toast.makeText(this, msg, Toast.LENGTH_SHORT)
+            toast = Toast.makeText(this, msg, Toast.LENGTH_LONG)
         } else {
             toast?.setText(msg)
         }

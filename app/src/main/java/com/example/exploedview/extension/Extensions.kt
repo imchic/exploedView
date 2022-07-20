@@ -1,12 +1,10 @@
 package com.example.exploedview.extension
 
+import java.util.Collections
+
 object Extensions {
 
-    fun ArrayList<Int>.max(arr: ArrayList<Int>): Int {
-        return arr.maxOrNull() ?: 0
-    }
+    fun ArrayList<Double>.max(arr: ArrayList<Double>): Double = Collections.max(arr).toDouble()
 
-    fun ArrayList<Int>.min(arr: ArrayList<Int>): Int {
-        return arr.minOrNull() ?: 0
-    }
+    fun ArrayList<Double>.min(arr: ArrayList<Double>): Double = Collections.min(arr)
 }

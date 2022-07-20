@@ -2,7 +2,7 @@ package com.example.exploedview.enums
 
 import com.carto.graphics.Color
 
-const val alpha: Short = 75
+const val alpha: Short = 255
 enum class ColorEnum(val value: Color) {
 
     BLACK(Color(0, 0, 0, alpha)),

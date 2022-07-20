@@ -13,12 +13,13 @@ import com.example.exploedview.MapActivity
 import com.example.exploedview.base.BaseException
 import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.extension.Extensions.max
+import com.example.exploedview.extension.Extensions.min
 import com.example.exploedview.util.LogUtil
 
 object MapLayer {
 
-    private var maxArr = arrayListOf<Int>()
-    private var maxVal: Int? = null
+    private var maxArr = ArrayList<Double>()
+    private var params: Double? = null
     private var filterArr: MutableList<Polygon>? = null
 
     private lateinit var south: MapPos
@@ -58,9 +59,18 @@ object MapLayer {
 
                     for (j in 0 until geometry.geometryCount) {
 
+                        val south = MapPos(geometry.getGeometry(j).bounds.min.x, geometry.getGeometry(j).bounds.min.y)
+                        val west = MapPos(geometry.getGeometry(j).bounds.max.x, geometry.getGeometry(j).bounds.min.y)
+
+                        val north = MapPos(geometry.getGeometry(j).bounds.max.x, geometry.getGeometry(j).bounds.max.y)
+                        val east = MapPos(geometry.getGeometry(j).bounds.min.x, geometry.getGeometry(j).bounds.max.y)
+
+                        val explodedVector = MapPosVector()
+                        explodedVector.apply { add(south); add(west); add(north); add(east) }
+
                         val createPolygon: Polygon?
                         createPolygon = Polygon(
-                            geometry.getGeometry(j),
+                            explodedVector,
                             MapStyle.setPolygonStyle(
                                 MapElementColor.set(ColorEnum.GREEN),
                                 MapElementColor.set(ColorEnum.GREEN),
@@ -76,12 +86,23 @@ object MapLayer {
                         polygonArr.add(createPolygon)
                         elements.add(createPolygon)
 
-                        val minusNum = 1.8
-                        val centerPos =
-                            MapPos(geometry.getGeometry(j).centerPos.x, geometry.getGeometry(j).centerPos.y + minusNum)
-                        val middlePos = MapPos(centerPos.x, centerPos.y - minusNum)
-                        val botPos = MapPos(middlePos.x, middlePos.y - minusNum)
+//                        LogUtil.d("min => ${createPolygon.geometry.bounds.min}")
+//                        LogUtil.d("max => ${createPolygon.geometry.bounds.max}")
 
+//                        LogUtil.d("min => ${createPolygon.geometry.bounds.min}")
+//                        LogUtil.d("max => ${createPolygon.geometry.bounds.max}")
+
+                        val centerPos = MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y + 230000)
+                        val middlePos = MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y - 50000)
+                        val botPos = MapPos(createPolygon.geometry.centerPos.x, middlePos.y- 300000)
+
+                        elements.add(
+                            Text(
+                                centerPos,
+                                MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 30F),
+                                hoNm
+                            )
+                        )
                         elements.add(
                             Text(
                                 middlePos,
@@ -96,21 +117,12 @@ object MapLayer {
                                 cPoedTxt
                             )
                         )
-                        elements.add(
-                            Text(
-                                centerPos,
-                                MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 30F),
-                                hoNm
-                            )
-                        )
                     }
 
                 }
 
 
             }
-
-            MapConst.BASE_EXPLODEDVIEW = polygonArr
 
             source?.addAll(elements)
 
@@ -180,15 +192,13 @@ object MapLayer {
         filterArr?.map {
 
             south = MapPos(it.bounds.max.x, it.bounds.min.y)
-            west = MapPos(it.bounds.max.x + MapConst.INCREASE_LINE_NUM, it.bounds.min.y)
+            west = MapPos(it.bounds.max.x + MapConst.INCREASE_LINE_NUM,  it.bounds.min.y)
 
             north = MapPos(it.bounds.max.x + MapConst.INCREASE_LINE_NUM, it.bounds.max.y)
             east = MapPos(it.bounds.max.x, it.bounds.max.y)
 
             val lineVector = MapPosVector()
             lineVector.apply { add(south); add(west); add(north); add(east) }
-
-            val newLine = increasLine(it)
 
             val addLine = Polygon(
                 lineVector,
@@ -199,6 +209,7 @@ object MapLayer {
                 )
             )
 
+            val newLine = increasLine(it)
             addLine.setMetaDataElement("ho", Variant(newLine.toString()))
 
             val lineText = Text(
@@ -220,8 +231,20 @@ object MapLayer {
      * 호실 추가
      * @param source LocalVectorDataSource?
      */
-    fun addHo(activity: MapActivity, source: LocalVectorDataSource?){
-        activity.showToast("addHo")
+    fun addHo(activity: MapActivity, source: LocalVectorDataSource?) {
+        runCatching {
+            BaseMap.selectPolygonArr.size == 1
+        }.onSuccess {
+            activity.run {
+                if (!it) {
+                    activity.showToast("한개의 호실을 선택해주세요.")
+                } else {
+                    showToast("통과.")
+                }
+            }
+        }.onFailure {
+            throw BaseException("add Ho Event 에러 발생")
+        }
     }
 
     /**
@@ -236,20 +259,21 @@ object MapLayer {
         type: MapLayerName
     ) {
         clear(source)
-        maxVal = 0
         maxArr.clear()
         filterArr?.clear()
 
+        params = 0.0
+
         when (type) {
             MapLayerName.ADD_FLOOR -> {
-                polygonArr.map { maxArr.add(it.bounds.max.y.toInt()) }
-                maxVal = maxArr.max(maxArr)
-                filterArr = polygonArr.filter { it.bounds.max.y == maxVal?.toDouble() } as MutableList<Polygon>
+                polygonArr.map { maxArr.add(it.bounds.max.y) }
+                params = maxArr.max(maxArr)
+                filterArr = polygonArr.filter { it.bounds.max.y == params } as MutableList<Polygon>
             }
             MapLayerName.ADD_LINE -> {
-                polygonArr.map { maxArr.add(it.bounds.max.x.toInt()) }
-                maxVal = maxArr.max(maxArr)
-                filterArr = polygonArr.filter { it.bounds.max.x.toInt() == maxVal } as MutableList<Polygon>
+                polygonArr.map { maxArr.add(it.bounds.max.x) }
+                params = maxArr.max(maxArr)
+                filterArr = polygonArr.filter { it.bounds.max.x == params } as MutableList<Polygon>
 
             }
             else -> {}
@@ -261,7 +285,9 @@ object MapLayer {
      * dataSource 초기화
      * @param source LocalVectorDataSource?
      */
-    private fun clear(source: LocalVectorDataSource?) { source?.clear() }
+    private fun clear(source: LocalVectorDataSource?) {
+        source?.clear()
+    }
 
     /**
      * 층 추가

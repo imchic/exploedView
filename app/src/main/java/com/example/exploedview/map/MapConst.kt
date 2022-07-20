@@ -11,10 +11,13 @@ object MapConst {
     const val FILL_OPACITY: Short = 125
     const val STROKE_OPACITY: Short = 255
 
-    const val INCREASE_FLOOR_NUM = 8
-    const val INCREASE_LINE_NUM = 10
+    // EPSG:4326
+//    const val INCREASE_FLOOR_NUM = 8
+//    const val INCREASE_LINE_NUM = 10
 
-    var BASE_EXPLODEDVIEW = mutableListOf<Polygon>()
+    // EPSG:3857
+    const val INCREASE_FLOOR_NUM = 844600.069804
+    const val INCREASE_LINE_NUM = 1224514.398726
 
     /**
      *  Google Mercator: 구글지도/빙지도/야후지도/OSM 등 에서 사용중인 좌표계
