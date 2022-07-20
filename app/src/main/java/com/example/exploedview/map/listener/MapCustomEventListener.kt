@@ -19,7 +19,7 @@ import com.example.exploedview.map.MapStyle
 import com.example.exploedview.util.LogUtil
 
 class MapCustomEventListener(
-    _mapView: MapView, private var _source: LocalVectorDataSource?, private val _posArr: MutableList<MapPos>?
+    val _mapView: MapView, private var _source: LocalVectorDataSource?, private val _posArr: MutableList<MapPos>?
 ) : MapEventListener() {
 
     private var _popup: BalloonPopup? = null
@@ -65,11 +65,11 @@ class MapCustomEventListener(
 
     }
 
-//    override fun onMapMoved() {
-//        super.onMapMoved()
-//        LogUtil.i(mapView?.zoom.toString())
-//        LogUtil.i(mapView?.focusPos.toString())
-//    }
+    override fun onMapMoved() {
+        super.onMapMoved()
+//        LogUtil.i(_mapView.zoom.toString())
+//        LogUtil.i(_mapView.focusPos.toString())
+    }
 
     override fun onMapClicked(mapClickInfo: MapClickInfo?) {
         super.onMapClicked(mapClickInfo)

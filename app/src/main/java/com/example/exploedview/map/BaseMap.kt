@@ -13,8 +13,6 @@ import com.carto.layers.EditableVectorLayer
 import com.carto.layers.Layer
 import com.carto.projections.Projection
 import com.carto.ui.MapView
-import com.carto.utils.AssetPackage
-import com.carto.utils.BitmapUtils
 import com.carto.vectorelements.Polygon
 import com.example.exploedview.MapActivity
 import com.example.exploedview.base.BaseException
@@ -84,9 +82,7 @@ object BaseMap {
             isZoomGestures = false
 //            backgroundBitmap = BitmapUtils.loadBitmapFromAssets("ci.png")
         }
-
-//        setInitZoomAndPos(22.054665.toFloat(), MapPos(10.226771, 13.399454), 0.5F)
-        setInitZoomAndPos(5.toFloat(), _proj.fromWgs84(MapPos(10.226771, 13.399454)), 0.5F)
+        setInitZoomAndPos(18.toFloat(), MapPos(55.880251, 272.365759), 0.5F)
 
         explodedViewSource = LocalVectorDataSource(_proj)
         groupLayerSource = LocalVectorDataSource(_proj)
@@ -94,18 +90,12 @@ object BaseMap {
         addLineDataSource = LocalVectorDataSource(_proj)
         addHoDataSource = LocalVectorDataSource(_proj)
 
-//        val layerNameArr = mutableListOf("explodedView", "group", "floorUp", "addLine")
         val layerArr = mutableListOf(explodedViewLayer, groupLayer, floorUpLayer, addLineLayer, addHoLayer)
-
         setLayer(layerArr)
 
         MapLayer.explodedView(_activity, explodedViewSource, createPolygonArr)
-
         _mapView.mapEventListener = MapCustomEventListener(_mapView, groupLayerSource, clickPosArr)
-
-        MapStyle.createGeoJSONLayer(_activity, _mapView)
-
-
+//        MapStyle.createGeoJSONLayer(_activity, _mapView)
     }
 
     /**
@@ -118,7 +108,6 @@ object BaseMap {
         _mapView.apply {
             setZoom(zoom, duration)
             setFocusPos(pos, duration)
-//            setFocusPos(_proj.fromWgs84(pos), duration)
         }
     }
 
@@ -135,9 +124,9 @@ object BaseMap {
         stream.read(buffer)
         stream.close()
         val json = String(buffer, charset("UTF-8"))
-        LogUtil.i("Result GeoJSON => $json")
+        LogUtil.i("response data => $json")
         val reader = GeoJSONGeometryReader()
-        reader.targetProjection = _proj
+//        reader.targetProjection = _proj
         return reader.readFeatureCollection(json)
     }
 
@@ -180,12 +169,12 @@ object BaseMap {
             _mapView.layers.add(layers[index])
 
         }
-        .also {
-            for (i in 0 until getLayerCount()) {
-                nameArr.add(_mapView.layers.get(i).metaData.get("name").string)
+            .also {
+                for (i in 0 until getLayerCount()) {
+                    nameArr.add(_mapView.layers.get(i).metaData.get("name").string)
+                }
+                LogUtil.i("생성된 레이어 이름 : ${nameArr}, 현재 생성된 레이어의 갯수 : ${getLayerCount()}")
             }
-            LogUtil.i("생성된 레이어 이름 : ${nameArr}, 현재 생성된 레이어의 갯수 : ${getLayerCount()}")
-        }
     }
 
 
@@ -269,11 +258,11 @@ object BaseMap {
             val featureBuilder = FeatureBuilder()
             featureBuilder.geometry = geom as PolygonGeometry
             featureBuilder.setPropertyValue("new_yn", Variant("Y"))
-            featureBuilder.setPropertyValue("ho_nm", Variant(value.toString()))
+            featureBuilder.setPropertyValue("HO_NM", Variant(value.toString()))
             val newFeature = featureBuilder.buildFeature()
 
             LogUtil.d(newFeature.properties.getObjectElement("new_yn").string)
-            LogUtil.d(newFeature.properties.getObjectElement("ho_nm").string)
+            LogUtil.d(newFeature.properties.getObjectElement("HO_NM").string)
             LogUtil.d(newFeature.geometry.bounds.toString())
 
             val featureVector = FeatureVector()
@@ -301,23 +290,33 @@ object BaseMap {
             .filter { it.geometry == geometry }
             .map {
 
-                when (it.getMetaDataElement("select").string) {
+                when (getPropertiesStringValue(it, "SELECT")) {
                     "n" -> {
                         it.style = MapStyle.setPolygonStyle(
                             MapElementColor.set(ColorEnum.YELLOW),
                             MapElementColor.set(ColorEnum.YELLOW),
                             2F
                         )
-                        it.setMetaDataElement("select", Variant("y"))
+
+//                        for(i in 0 until it.metaData.size()){
+//                            LogUtil.d(it.metaData.get(MapConst.PROPERTIES_VALUE_ARR[i.toInt()]).string)
+//                        }
+
+                        for((key, value) in MapConst.PROPERTIES_VALUE_MAP.entries){
+                            LogUtil.d("key => $key")
+                            LogUtil.d("value => $value")
+                        }
+
+                        it.setMetaDataElement("SELECT", Variant("y"))
                         selectPolygonArr.add(it)
                     }
                     "y" -> {
                         it.style = MapStyle.setPolygonStyle(
-                            MapElementColor.set(ColorEnum.GREEN),
-                            MapElementColor.set(ColorEnum.GREEN),
+                            MapElementColor.set(ColorEnum.ORANGE),
+                            MapElementColor.set(ColorEnum.ORANGE),
                             2F
                         )
-                        it.setMetaDataElement("select", Variant("n"))
+                        it.setMetaDataElement("SELECT", Variant("n"))
                         selectPolygonArr.remove(it)
                     }
                     else -> {
@@ -327,7 +326,7 @@ object BaseMap {
 
             }
 
-            LogUtil.d("선택된 전개도 폴리곤의 개수 : ${selectPolygonArr.size}")
+        LogUtil.d("선택된 전개도 폴리곤의 개수 : ${selectPolygonArr.size}")
     }
 
     /**
@@ -335,17 +334,41 @@ object BaseMap {
      * @param parnnts MutableList<Polygon>
      * @param child MutableList<Polygon>
      */
-    fun group(parnnts: MutableList<Polygon>, child: MutableList<Polygon>){
+    fun group(parnnts: MutableList<Polygon>, child: MutableList<Polygon>) {
         parnnts
             .filter { child.contains(it) }
-            .map{
+            .map {
                 it.style = MapStyle.setPolygonStyle(
                     MapElementColor.set(ColorEnum.PURPLE),
                     MapElementColor.set(ColorEnum.PURPLE),
                     2F
                 )
             }
+    }
+
+    /**
+     * 폴리곤 내 프로퍼티 값 세팅하기
+     * @param properties Variant
+     * @param value String
+     * @return String
+     */
+    fun setPropertiesStringValue(properties: Variant, arr: ArrayList<String>, polygon: Polygon) {
+        arr.map {
+            val getValue = properties.getObjectElement(it).string
+            polygon.setMetaDataElement(it, Variant(getValue))
         }
+    }
+
+    fun getPropertiesStringValue(polygon: Polygon, value: String): String{
+        val _value = polygon.getMetaDataElement(value).string
+        return _value
+    }
+
+    fun getPropertiesStringValueArr(polygon: Polygon){
+        for(i in 0 until polygon.metaData.size()){
+            LogUtil.d(polygon.metaData.get(MapConst.PROPERTIES_VALUE_ARR[i.toInt()]).string)
+        }
+    }
 
 
 }

@@ -10,7 +10,6 @@ import com.carto.utils.AssetUtils
 import com.carto.utils.ZippedAssetPackage
 import com.carto.vectortiles.MBVectorTileDecoder
 import com.example.exploedview.MapActivity
-import com.example.exploedview.base.BaseException
 import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.util.LogUtil
 import java.io.InputStream
@@ -71,7 +70,9 @@ object MapStyle {
             strokeColor = _color
             strokeWidth = 0.1F
             this.fontSize = fontSize
-            this.textMargins = TextMargins(6, 6, 6, 6)
+            textMargins = TextMargins(6, 6, 6, 6)
+//            isHideIfOverlapped = false
+            isScaleWithDPI = true
             return this.buildStyle()
         }
 
@@ -121,7 +122,7 @@ object MapStyle {
         val dataSource = GeoJSONVectorTileDataSource(0, mapView.zoom.toInt())
 
         try {
-            val `is`: InputStream = activity.assets.open("test.geojson")
+            val `is`: InputStream = activity.assets.open("dusan.geojson")
             val sb = StringBuilder()
             var ch: Int
             while (`is`.read().also { ch = it } != -1) {
