@@ -1,6 +1,6 @@
 package com.example.exploedview.map
 
-import android.content.Context
+import android.app.Activity
 import com.carto.core.MapPos
 import com.carto.core.MapPosVector
 import com.carto.core.Variant
@@ -35,7 +35,7 @@ object MapLayer {
      * @param source LocalVectorDataSource?
      * @param polygonArr MutableList<Polygon>
      */
-    fun explodedView(context: Context, source: LocalVectorDataSource?, polygonArr: MutableList<Polygon>) {
+    fun explodedView(context: Activity, source: LocalVectorDataSource?, polygonArr: MutableList<Polygon>) {
 
         try {
             clear(source)
@@ -46,16 +46,13 @@ object MapLayer {
             val features = BaseMap.getGeoJsonFeature(context, "dusan.geojson")
             val total = features?.featureCount!!
 
+            (context as MapActivity).viewDataBinding.txtTotal.text = total.toString()
+
             for (i in 0 until total) {
 
                 features.getFeature(i).apply {
                     val geometry = features.getFeature(i).geometry as Geometry
                     val properties = properties
-
-//                    val aptNo = BaseMap.getPropertiesStringValue(properties, "APT_NO")
-//                    val nsoNm = BaseMap.getPropertiesStringValue(properties, "NSO_NM")
-//                    val hoNm = BaseMap.getPropertiesStringValue(properties, "HO_NM")
-//                    val huNum = BaseMap.getPropertiesStringValue(properties, "HU_NUM")
 
                     val south = MapPos(geometry.bounds.min.x, geometry.bounds.min.y)
                     val west = MapPos(geometry.bounds.max.x, geometry.bounds.min.y)
@@ -70,8 +67,8 @@ object MapLayer {
                     createPolygon = Polygon(
                         explodedVector,
                         MapStyle.setPolygonStyle(
-                            MapElementColor.set(ColorEnum.ORANGE),
-                            MapElementColor.set(ColorEnum.ORANGE),
+                            MapElementColor.set(ColorEnum.TEAL),
+                            MapElementColor.set(ColorEnum.TEAL),
                             2F
                         )
                     )
@@ -234,9 +231,7 @@ object MapLayer {
         }.onSuccess {
             activity.run {
                 if (!it) {
-                    activity.showToast("한개의 호실을 선택해주세요.")
                 } else {
-                    showToast("통과.")
                 }
             }
         }.onFailure {

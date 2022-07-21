@@ -22,15 +22,16 @@ import com.example.exploedview.map.listener.VectorElementSelectEventListener
 import com.example.exploedview.util.LogUtil
 
 @SuppressLint("StaticFieldLeak")
-object BaseMap {
+object BaseMap: MapViewModel() {
 
-    private lateinit var _context: Context
-    private lateinit var _activity: MapActivity
+    private lateinit var context: Context
+    private lateinit var activity: MapActivity
+    lateinit var mapViewModel: MapViewModel
 
     // map
-    private lateinit var _mapView: MapView
-    private lateinit var _mapOpt: Options
-    lateinit var _proj: Projection
+    private lateinit var mapView: MapView
+    private lateinit var mapOpt: Options
+    lateinit var proj: Projection
 
     // source
     private var explodedViewSource: LocalVectorDataSource? = null
@@ -65,18 +66,20 @@ object BaseMap {
      * @param mapView MapView
      * @param activity Activity
      * @param context Context
+     * @param viewModel MapViewModel
      */
-    fun init(mapView: MapView, activity: Activity, context: Context) {
+    fun init(mapView: MapView, activity: Activity, context: Context, viewModel: MapViewModel) {
 
-        _context = context
-        _activity = activity as MapActivity
+        this.context = context
+        this.activity = activity as MapActivity
+        mapViewModel = viewModel
 
-        _mapView = mapView
-        _mapOpt = _mapView.options
-        _proj = _mapOpt.baseProjection
+        this.mapView = mapView
+        mapOpt = this.mapView.options
+        proj = mapOpt.baseProjection
 
         // 맵 옵션
-        _mapOpt.apply {
+        mapOpt.apply {
             tiltRange = MapRange(90f, 90f) // 틸트 고정
             isRotatable = false // 회전
             isZoomGestures = false
@@ -84,17 +87,18 @@ object BaseMap {
         }
         setInitZoomAndPos(18.toFloat(), MapPos(55.880251, 272.365759), 0.5F)
 
-        explodedViewSource = LocalVectorDataSource(_proj)
-        groupLayerSource = LocalVectorDataSource(_proj)
-        floorUpDataSource = LocalVectorDataSource(_proj)
-        addLineDataSource = LocalVectorDataSource(_proj)
-        addHoDataSource = LocalVectorDataSource(_proj)
+        explodedViewSource = LocalVectorDataSource(proj)
+        groupLayerSource = LocalVectorDataSource(proj)
+        floorUpDataSource = LocalVectorDataSource(proj)
+        addLineDataSource = LocalVectorDataSource(proj)
+        addHoDataSource = LocalVectorDataSource(proj)
 
         val layerArr = mutableListOf(explodedViewLayer, groupLayer, floorUpLayer, addLineLayer, addHoLayer)
         setLayer(layerArr)
 
-        MapLayer.explodedView(_activity, explodedViewSource, createPolygonArr)
-        _mapView.mapEventListener = MapCustomEventListener(_mapView, groupLayerSource, clickPosArr)
+        MapLayer.explodedView(this.activity, explodedViewSource, createPolygonArr)
+        this.mapView.mapEventListener = MapCustomEventListener(this.mapView, groupLayerSource, clickPosArr)
+
 //        MapStyle.createGeoJSONLayer(_activity, _mapView)
     }
 
@@ -105,7 +109,7 @@ object BaseMap {
      * @param duration Float
      */
     private fun setInitZoomAndPos(zoom: Float, pos: MapPos, duration: Float) {
-        _mapView.apply {
+        mapView.apply {
             setZoom(zoom, duration)
             setFocusPos(pos, duration)
         }
@@ -166,14 +170,15 @@ object BaseMap {
             }
 
             setLayerName(layers[index], "name", Variant(name.value))
-            _mapView.layers.add(layers[index])
+            mapView.layers.add(layers[index])
 
         }
             .also {
                 for (i in 0 until getLayerCount()) {
-                    nameArr.add(_mapView.layers.get(i).metaData.get("name").string)
+                    nameArr.add(mapView.layers.get(i).metaData.get("name").string)
                 }
                 LogUtil.i("생성된 레이어 이름 : ${nameArr}, 현재 생성된 레이어의 갯수 : ${getLayerCount()}")
+                activity._viewModel.getBaseLayers.value = getLayerCount().toString()
             }
     }
 
@@ -192,13 +197,13 @@ object BaseMap {
      * @param key String
      * @return String?
      */
-    fun getLayerName(index: Int, key: String): String = _mapView.layers.get(index).getMetaDataElement(key).string
+    fun getLayerName(index: Int, key: String): String = mapView.layers.get(index).getMetaDataElement(key).string
 
     /**
      * 레이어의 갯수
      * @return Int
      */
-    fun getLayerCount(): Int = _mapView.layers.count()
+    fun getLayerCount(): Int = mapView.layers.count()
 
     /**
      * 초기화
@@ -215,11 +220,17 @@ object BaseMap {
         MapLayer.lineElement.clear()
 
         explodedViewSource?.clear()
-        MapLayer.explodedView(_context, explodedViewSource, createPolygonArr)
+        MapLayer.explodedView(activity, explodedViewSource, createPolygonArr)
 
         selectPolygonArr.clear()
+        containsPolygonArr.clear()
 
-        _activity.showToast("clear")
+        mapViewModel.apply {
+            getTotalExplodedPolygon.value = createPolygonArr.size.toString()
+            getBaseLayers.value = mapView.layers.count().toString()
+            getSelectExplodedPolygon.value = selectPolygonArr.size.toString()
+            getGroupExplodedPolygon.value = containsPolygonArr.size.toString()
+        }
     }
 
     /**
@@ -232,7 +243,7 @@ object BaseMap {
         val bool = child.isNotEmpty()
 
         runCatching {
-            if (!bool) throw BaseException("그룹영역이 지정되지 않았습니다. \n 그룹영역을 드래그해주세요.")
+            if (!bool) throw BaseException("그룹영역이 지정되지 않았습니다.")
         }.onSuccess {
             clickPosArr.clear()
             groupLayerSource?.clear()
@@ -241,7 +252,6 @@ object BaseMap {
 
         }.onFailure { it: Throwable ->
             LogUtil.e("group status: $bool, $it")
-            _activity.showToast(it.message)
         }
     }
 
@@ -298,22 +308,15 @@ object BaseMap {
                             2F
                         )
 
-//                        for(i in 0 until it.metaData.size()){
-//                            LogUtil.d(it.metaData.get(MapConst.PROPERTIES_VALUE_ARR[i.toInt()]).string)
-//                        }
-
-                        for((key, value) in MapConst.PROPERTIES_VALUE_MAP.entries){
-                            LogUtil.d("key => $key")
-                            LogUtil.d("value => $value")
-                        }
+                        getPropertiesStringValueArr(it)
 
                         it.setMetaDataElement("SELECT", Variant("y"))
                         selectPolygonArr.add(it)
                     }
                     "y" -> {
                         it.style = MapStyle.setPolygonStyle(
-                            MapElementColor.set(ColorEnum.ORANGE),
-                            MapElementColor.set(ColorEnum.ORANGE),
+                            MapElementColor.set(ColorEnum.TEAL),
+                            MapElementColor.set(ColorEnum.TEAL),
                             2F
                         )
                         it.setMetaDataElement("SELECT", Variant("n"))
@@ -324,6 +327,11 @@ object BaseMap {
                     }
                 }
 
+            }
+            .also {
+                activity.runOnUiThread {
+                    activity._viewModel.getSelectExplodedPolygon.value = selectPolygonArr.size.toString()
+                }
             }
 
         LogUtil.d("선택된 전개도 폴리곤의 개수 : ${selectPolygonArr.size}")
@@ -360,13 +368,24 @@ object BaseMap {
     }
 
     fun getPropertiesStringValue(polygon: Polygon, value: String): String{
-        val _value = polygon.getMetaDataElement(value).string
-        return _value
+        return polygon.getMetaDataElement(value).string
     }
 
     fun getPropertiesStringValueArr(polygon: Polygon){
-        for(i in 0 until polygon.metaData.size()){
-            LogUtil.d(polygon.metaData.get(MapConst.PROPERTIES_VALUE_ARR[i.toInt()]).string)
+        var result = ""
+        for((key, value) in MapConst.PROPERTIES_VALUE_MAP){
+            result += "$key : ${polygon.metaData.get(value).string} \n"
+        }
+        val arr  = ArrayList<String>()
+        arr.add("레이어 정보")
+        arr.add(result)
+        activity.runOnUiThread {
+            if(activity._viewModel.getLayerReadStatus.value == true){
+                mapViewModel.showAlertDialog(arr)
+            } else {
+                val toggleValue = activity._viewModel.getLayerReadStatus.value ?: false
+                activity._viewModel.showSnackbar("레이어 정보 열람 $toggleValue")
+            }
         }
     }
 
