@@ -6,9 +6,7 @@ import com.carto.ui.VectorElementClickInfo
 import com.carto.vectorelements.Text
 import com.example.exploedview.map.BaseMap
 import com.example.exploedview.map.MapLayerName
-import com.example.exploedview.map.MapStyle
 import com.example.exploedview.util.LogUtil
-import com.fasterxml.jackson.databind.ser.Serializers.Base
 
 class VectorElementSelectEventListener(private val layer: EditableVectorLayer?) :
     VectorElementEventListener() {
@@ -22,7 +20,7 @@ class VectorElementSelectEventListener(private val layer: EditableVectorLayer?) 
             }
         }
 
-        LogUtil.d("선택된 레이어 : $selectLayerName , ${clickInfo.clickPos}")
+        LogUtil.i("선택된 레이어 : $selectLayerName , ${clickInfo.clickPos}")
         return true
     }
 

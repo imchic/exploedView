@@ -8,7 +8,7 @@ object LogUtil {
 
     val classNm = Thread.currentThread().stackTrace[4].fileName.replace(".java", "::")
 
-    /* 로그 */
+    // 로그
     fun v(msg: String) {
         if (BuildConfig.DEBUG) Log.v(classNm, "상세 \uD83D\uDC49\uD83D\uDC49" + buildLogMsg(msg))
     }

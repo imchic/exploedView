@@ -23,8 +23,8 @@ object HttpConnection {
     fun post(map: Map<String, String>, httpUrl: String, callback: Callback) {
 
         try {
-            val jsonObject = JSONObject()
 
+            val jsonObject = JSONObject()
 
             if(map.isNotEmpty()) {
                 map.forEach { data ->

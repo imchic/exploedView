@@ -10,8 +10,8 @@ import com.carto.utils.AssetUtils
 import com.carto.utils.ZippedAssetPackage
 import com.carto.vectortiles.MBVectorTileDecoder
 import com.example.exploedview.MapActivity
-import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.util.LogUtil
+import com.example.exploedview.util.MapColor
 import java.io.InputStream
 
 
@@ -106,10 +106,10 @@ object MapStyle {
             leftColor = Color(MapConst.STROKE_OPACITY, 0, 0, 0)
             leftMargins = BalloonPopupMargins(6, 6, 6, 6)
             rightMargins = BalloonPopupMargins(2, 6, 12, 6)
-            leftColor = MapElementColor.set(ColorEnum.TEAL)
-            titleColor = MapElementColor.set(ColorEnum.NAVY)
+            leftColor = MapColor.TEAL
+            titleColor = MapColor.NAVY
             titleFontSize = 16
-            descriptionColor = MapElementColor.set(ColorEnum.GRAY)
+            descriptionColor = MapColor.GRAY
             descriptionFontSize = 14
             placementPriority = 1
         }

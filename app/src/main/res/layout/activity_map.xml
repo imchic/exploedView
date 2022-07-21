@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:ignore="HardcodedText"
+    tools:context=".MapActivity">
+
+    <com.carto.ui.MapView
+        android:id="@+id/cartoMapView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressBar"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:indeterminate="true"
+        app:indicatorColor="#ff1493"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.navigationrail.NavigationRailView
+        style="@style/Widget.Material3.NavigationRailView"
+        android:id="@+id/navigation_rail"
+        android:layout_width="90dp"
+        android:layout_height="match_parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/navigation_rail_menu"
+        app:menuGravity="center"
+        app:headerLayout="@layout/layout_header"
+        />
+
+    <!-- event button -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:visibility="gone"
+        android:layout_margin="10dp"
+        android:id="@+id/constraintLayout">
+
+        <include
+            android:id="@+id/btnLayout"
+            layout="@layout/merge_button" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- info -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="#4dffffff"
+        android:layout_margin="10dp"
+        android:padding="10dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@+id/cartoMapView"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:id="@+id/constraintLayout2">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:text="info"
+            android:drawablePadding="4dp"
+            
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:id="@+id/txt_info"
+            app:drawableStartCompat="@drawable/ic_edit" />
+
+        <TextView
+            android:id="@+id/txt_total_title"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="Feature Cnt:"
+            android:layout_margin="10dp"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/txt_info" />
+
+        <TextView
+            android:id="@+id/txt_total"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="value"
+            android:layout_margin="10dp"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintStart_toEndOf="@+id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_info" />
+
+        <TextView
+            android:id="@+id/txt_layer_title"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="Layer Cnt:"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_total_title"
+            app:layout_constraintStart_toStartOf="@+id/txt_total_title" />
+
+        <TextView
+            android:id="@+id/txt_layer"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="value"
+            android:layout_marginStart="10dp"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintStart_toEndOf="@+id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_total" />
+
+        <TextView
+            android:id="@+id/txt_select_title"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="Select Cnt:"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_layer_title"
+            app:layout_constraintStart_toStartOf="@+id/txt_total_title" />
+
+        <TextView
+            android:id="@+id/txt_select"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="value"
+            android:layout_marginStart="10dp"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintStart_toEndOf="@+id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_layer" />
+
+        <TextView
+            android:id="@+id/txt_group_title"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="Group Cnt:"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_select_title"
+            app:layout_constraintStart_toStartOf="@+id/txt_total_title" />
+
+        <TextView
+            android:id="@+id/txt_group"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="value"
+            android:layout_marginStart="10dp"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintStart_toEndOf="@+id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_select" />
+
+        <TextView
+            android:id="@+id/txt_coord_title"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            
+            android:text="Coord:"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_group"
+            app:layout_constraintStart_toStartOf="@+id/txt_total_title" />
+
+        <TextView
+            android:id="@+id/txt_coord"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginStart="10dp"
+            android:text="value"
+            
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/txt_total_title"
+            app:layout_constraintStart_toEndOf="@+id/txt_total_title"
+            app:layout_constraintTop_toBottomOf="@+id/txt_group" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/md_theme_dark_surface"
+        android:fontFamily="@font/notosansmedium"
+        android:text="레이어 정보 열람"
+        android:layout_marginEnd="10dp"
+        
+        app:layout_constraintEnd_toStartOf="@+id/switch_read"
+        app:layout_constraintBottom_toBottomOf="@+id/switch_read"
+        app:layout_constraintTop_toTopOf="@+id/switch_read"
+        android:id="@+id/textView2" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switch_read"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+  </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>
