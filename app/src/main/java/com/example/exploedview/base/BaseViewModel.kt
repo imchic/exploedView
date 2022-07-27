@@ -17,6 +17,8 @@ open class BaseViewModel : ViewModel() {
 
     private val alertDialog = ComponentUtil.alertDialog()
 
+    private val addFloorBadge = ComponentUtil.addFloorCntBadge()
+
     private val compositeDisposable = CompositeDisposable()
 
     fun addDisposable(disposable: Disposable) {
@@ -67,6 +69,10 @@ open class BaseViewModel : ViewModel() {
 
     fun observeAlertDialog(lifeCycleOwner: LifecycleOwner, ob: (ArrayList<String>) -> Unit) {
         alertDialog.observe(lifeCycleOwner, ob)
+    }
+
+    fun observeAddFloorBadge(lifeCycleOwner: LifecycleOwner, ob: (Int) -> Unit) {
+        addFloorBadge.observe(lifeCycleOwner, ob)
     }
 
 }

@@ -72,4 +72,14 @@ object ComponentUtil {
             })
         }
     }
+
+    class addFloorCntBadge: SingleLiveEvent<Int>(){
+        fun observe(owner: LifecycleOwner, observer: (Int) -> Unit) {
+            super.observe(owner, Observer {
+                it?.run{
+                    observer(it)
+                }
+            })
+        }
+    }
 }

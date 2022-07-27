@@ -12,8 +12,8 @@ object MapConst {
     const val STROKE_OPACITY: Short = 255
 
     // EPSG:4326
-    const val INCREASE_FLOOR_NUM = 8
-    const val INCREASE_LINE_NUM = 10
+    const val INCREASE_FLOOR_NUM = 7.50998
+    const val INCREASE_LINE_NUM = 10.000002
 
     val PROPERTIES_VALUE_ARR = arrayListOf(
         "APT_NO",
@@ -32,6 +32,7 @@ object MapConst {
     )
 
     val PROPERTIES_VALUE_MAP= mapOf(
+        "커스텀인덱스" to "CUSTOM_INDEX",
         "아파트일련번호" to "APT_NO",
         "건물일련번호" to "BD_MGT_SN",
         "읍면동코드" to "ADM_CD",

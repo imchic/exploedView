@@ -11,12 +11,13 @@ import com.carto.ui.MapClickInfo
 import com.carto.ui.MapEventListener
 import com.carto.ui.MapView
 import com.carto.vectorelements.*
+import com.example.exploedview.base.BaseException
 import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.map.BaseMap
-import com.example.exploedview.map.MapElementColor
 import com.example.exploedview.map.MapLayerName
 import com.example.exploedview.map.MapStyle
 import com.example.exploedview.util.LogUtil
+import com.example.exploedview.util.MapColor
 
 class MapCustomEventListener(
     val _mapView: MapView, private var _source: LocalVectorDataSource?, private val _posArr: MutableList<MapPos>?
@@ -56,7 +57,7 @@ class MapCustomEventListener(
 
             it.run {
                 if (it.getMetaDataElement("name").string == MapLayerName.GROUP.value) {
-                    vectorEditEventListener = VectorElementEditEventListener(BaseMap.groupLayerSource)
+                    vectorEditEventListener = VectorElementEditEventListener(BaseMap.containsDataSource)
                 }
                 vectorElementEventListener = BaseMap.selectListener
 
@@ -67,7 +68,13 @@ class MapCustomEventListener(
 
     override fun onMapMoved() {
         super.onMapMoved()
-//        LogUtil.i(_mapView.zoom.toString())
+        try {
+            BaseMap.activity.runOnUiThread {
+                BaseMap.mapViewModel.getCoord.value = "${_mapView.focusPos.x} ${_mapView.focusPos.y}"
+            }
+        } catch (e: BaseException) {
+            LogUtil.e(e.toString())
+        }
 //        LogUtil.i(_mapView.focusPos.toString())
     }
 
@@ -104,7 +111,7 @@ class MapCustomEventListener(
 
                 1 -> {
                     for (pos in _posArr!!) {
-                        _pointSymbol = Point(pos, MapStyle.setPointStyle(MapElementColor.set(ColorEnum.MAGENTA), 13F))
+                        _pointSymbol = Point(pos, MapStyle.setPointStyle(MapColor.MAGENTA, 13F))
                         element.add(_pointSymbol)
 
                         _popup = BalloonPopup(_pointSymbol?.geometry?.centerPos, popupStyle, "선 3개 이상부터 가능합니다.",
@@ -121,7 +128,7 @@ class MapCustomEventListener(
                     }
                     _lineSymbol = Line(
                         posVector, MapStyle.setLineStyle(
-                            MapElementColor.set(ColorEnum.MAGENTA), LineJoinType.LINE_JOIN_TYPE_MITER, 8F
+                            MapColor.MAGENTA, LineJoinType.LINE_JOIN_TYPE_MITER, 8F
                         )
                     )
                     element.add(_lineSymbol)
@@ -137,7 +144,7 @@ class MapCustomEventListener(
                     }
                     _polygonSymbol = Polygon(
                         posVector, MapStyle.setPolygonStyle(
-                            MapElementColor.set(ColorEnum.MAGENTA), MapElementColor.set(ColorEnum.MAGENTA), 2F
+                            MapColor.MAGENTA, MapColor.MAGENTA, 2F
                         )
                     )
 

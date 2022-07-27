@@ -13,10 +13,9 @@ import com.carto.styles.PointStyle
 import com.carto.styles.PointStyleBuilder
 import com.carto.ui.VectorElementDragInfo
 import com.carto.vectorelements.*
-import com.example.exploedview.enums.ColorEnum
 import com.example.exploedview.map.BaseMap
-import com.example.exploedview.map.MapElementColor
 import com.example.exploedview.util.LogUtil
+import com.example.exploedview.util.MapColor
 
 class VectorElementEditEventListener(val source: LocalVectorDataSource?) : VectorEditEventListener() {
 
@@ -60,7 +59,9 @@ class VectorElementEditEventListener(val source: LocalVectorDataSource?) : Vecto
                             title = "드래그를 이용하여 영역을 지정해주세요."
                             description = "포함된 폴리곤의 개수 : ${BaseMap.containsPolygonArr.size}"
                         }.also {
-                            BaseMap.mapViewModel.getGroupExplodedPolygon.value = BaseMap.containsPolygonArr.size.toString()
+                            BaseMap.mapViewModel.getGroupExplodedPolygon.value = BaseMap.containsPolygonArr.size
+                            BaseMap.selectPolygonArr.clear()
+                            BaseMap.activity.viewDataBinding.txtSelect.text = BaseMap.selectPolygonArr.size.toString()
                         }
                     }
 //                    is Polygon -> {
@@ -105,12 +106,12 @@ class VectorElementEditEventListener(val source: LocalVectorDataSource?) : Vecto
     ): PointStyle? {
         if (null == styleNormal) {
             val builder = PointStyleBuilder()
-            builder.color = MapElementColor.set(ColorEnum.RED)
+            builder.color = MapColor.RED
             builder.size = 15f
             styleNormal = builder.buildStyle()
             builder.size = 15f
             styleVirtual = builder.buildStyle()
-            builder.color = MapElementColor.set(ColorEnum.RED)
+            builder.color = MapColor.RED
             builder.size = 15f
             styleSelected = builder.buildStyle()
         }

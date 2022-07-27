@@ -12,8 +12,9 @@ import com.carto.vectorelements.VectorElementVector
 import com.example.exploedview.MapActivity
 import com.example.exploedview.base.BaseException
 import com.example.exploedview.enums.ColorEnum
-import com.example.exploedview.extension.Extensions.max
+import com.example.exploedview.extension.max
 import com.example.exploedview.util.LogUtil
+import com.example.exploedview.util.MapColor
 
 object MapLayer {
 
@@ -28,6 +29,7 @@ object MapLayer {
 
     var floorElement: VectorElementVector = VectorElementVector()
     var lineElement: VectorElementVector = VectorElementVector()
+    var hoElement: VectorElementVector = VectorElementVector()
 
     /**
      * 공동주택 전개도 레이어
@@ -35,74 +37,76 @@ object MapLayer {
      * @param source LocalVectorDataSource?
      * @param polygonArr MutableList<Polygon>
      */
-    fun explodedView(context: Activity, source: LocalVectorDataSource?, polygonArr: MutableList<Polygon>) {
+    fun explodedView(context: Activity, source: LocalVectorDataSource?, polygonArr: MutableList<Polygon>): Boolean {
+
+        var flag: Boolean
 
         try {
             clear(source)
             polygonArr.clear()
 
             val elements = VectorElementVector()
-
             val features = BaseMap.getGeoJsonFeature(context, "dusan.geojson")
-            val total = features?.featureCount!!
 
-            (context as MapActivity).viewDataBinding.txtTotal.text = total.toString()
+            if(features != null){
 
-            for (i in 0 until total) {
+                val total = features.featureCount
+                (context as MapActivity).viewDataBinding.txtTotal.text = total.toString()
 
-                features.getFeature(i).apply {
-                    val geometry = features.getFeature(i).geometry as Geometry
-                    val properties = properties
+                for (i in 0 until total) {
 
-                    val south = MapPos(geometry.bounds.min.x, geometry.bounds.min.y)
-                    val west = MapPos(geometry.bounds.max.x, geometry.bounds.min.y)
+                    features.getFeature(i).apply {
+                        val geometry = features.getFeature(i).geometry as Geometry
+                        val properties = properties
 
-                    val north = MapPos(geometry.bounds.max.x, geometry.bounds.max.y)
-                    val east = MapPos(geometry.bounds.min.x, geometry.bounds.max.y)
+                        val south = MapPos(geometry.bounds.min.x, geometry.bounds.min.y)
+                        val west = MapPos(geometry.bounds.max.x, geometry.bounds.min.y)
 
-                    val explodedVector = MapPosVector()
-                    explodedVector.apply { add(south); add(west); add(north); add(east) }
+                        val north = MapPos(geometry.bounds.max.x, geometry.bounds.max.y)
+                        val east = MapPos(geometry.bounds.min.x, geometry.bounds.max.y)
 
-                    val createPolygon: Polygon?
-                    createPolygon = Polygon(
-                        explodedVector,
-                        MapStyle.setPolygonStyle(
-                            MapElementColor.set(ColorEnum.TEAL),
-                            MapElementColor.set(ColorEnum.TEAL),
-                            2F
+                        val explodedVector = MapPosVector()
+                        explodedVector.apply { add(south); add(west); add(north); add(east) }
+
+                        val createPolygon: Polygon?
+                        createPolygon = Polygon(
+                            explodedVector,
+                            MapStyle.setPolygonStyle(
+                                MapColor.TEAL,
+                                MapColor.TEAL,
+                                2F
+                            )
                         )
-                    )
 
-                    BaseMap.setPropertiesStringValue(properties, MapConst.PROPERTIES_VALUE_ARR, createPolygon)
-                    createPolygon.setMetaDataElement("SELECT", Variant("n"))
+                        createPolygon.run {
+                            BaseMap.setPropertiesStringValue(properties, MapConst.PROPERTIES_VALUE_ARR, this)
+                            setMetaDataElement("SELECT", Variant("n"))
+                            setMetaDataElement("CUSTOM_INDEX", Variant(i.toString()))
 
-                    polygonArr.add(createPolygon)
-                    elements.add(createPolygon)
+                            polygonArr.add(this)
+                            elements.add(this)
+                        }
+                        val minusNum = 2
 
-                    val minusNum = 2
-
-                    val centerPos =
-                        MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y)
-                    val middlePos =
-                        MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y - minusNum)
+                        val centerPos = MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y)
+                        val middlePos = MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y - minusNum)
 //                    val botPos =
 //                        MapPos(createPolygon.geometry.centerPos.x, middlePos.y - minusNum)
 //
-                    elements.add(
-                        Text(
-                            centerPos,
-                            MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), MapConst.FONT_SIZE),
-                            BaseMap.getPropertiesStringValue(createPolygon, "HO_NM")
+                        elements.add(
+                            Text(
+                                centerPos,
+                                MapStyle.setTextStyle(MapColor.BLACK, MapConst.FONT_SIZE),
+                                BaseMap.getPropertiesStringValue(createPolygon, "HO_NM")
+                            )
                         )
-                    )
-                    elements.add(
-                        Text(
-                            middlePos,
-                            MapStyle.setTextStyle(MapElementColor.set(ColorEnum.RED), MapConst.FONT_SIZE),
-                            BaseMap.getPropertiesStringValue(createPolygon, "HU_NUM")
-
+                        elements.add(
+                            Text(
+                                middlePos,
+                                MapStyle.setTextStyle(MapColor.RED, MapConst.FONT_SIZE),
+                                BaseMap.getPropertiesStringValue(createPolygon, "HU_NUM")
+                            )
                         )
-                    )
 //                        elements.add(
 //                            Text(
 //                                botPos,
@@ -111,16 +115,24 @@ object MapLayer {
 //                            )
 //                        )
 
+                    }
+
+
                 }
 
-
+                source?.addAll(elements)
+                flag = true
+            } else {
+                flag = false
             }
 
-            source?.addAll(elements)
 
         } catch (e: BaseException) {
             LogUtil.e(e.toString())
+            flag = false
         }
+
+        return flag
 
     }
 
@@ -147,26 +159,14 @@ object MapLayer {
             val addFloor = Polygon(
                 floorVector,
                 MapStyle.setPolygonStyle(
-                    MapElementColor.set(ColorEnum.BLUE),
-                    MapElementColor.set(ColorEnum.BLUE),
+                    MapColor.BLUE,
+                    MapColor.BLUE,
                     2F
                 )
             )
 
             val newFloor = increaseFloor(it)
-            addFloor.setMetaDataElement("HO_NM", Variant(newFloor.toString()))
-            addFloor.setMetaDataElement("SELECT", Variant("n"))
-
-            val newFloorText = Text(
-                addFloor.geometry.centerPos,
-                MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), MapConst.FONT_SIZE),
-                newFloor.toString()
-            )
-
-            polygonArr.add(addFloor)
-
-            floorElement.add(addFloor)
-            floorElement.add(newFloorText)
+            this.addText(addFloor, newFloor, polygonArr, floorElement)
         }
 
         source?.addAll(floorElement)
@@ -196,29 +196,38 @@ object MapLayer {
             val addLine = Polygon(
                 lineVector,
                 MapStyle.setPolygonStyle(
-                    MapElementColor.set(ColorEnum.HOTPINK),
-                    MapElementColor.set(ColorEnum.HOTPINK),
+                    MapColor.HOTPINK,
+                    MapColor.HOTPINK,
                     2F
                 )
             )
 
             val newLine = increasLine(it)
-            addLine.setMetaDataElement("HO_NM", Variant(newLine.toString()))
-            addLine.setMetaDataElement("SELECT", Variant("n"))
-
-            val lineText = Text(
-                addLine.geometry.centerPos,
-                MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), MapConst.FONT_SIZE),
-                newLine.toString()
-            )
-
-            polygonArr.add(addLine)
-
-            lineElement.add(addLine)
-            lineElement.add(lineText)
+            this.addText(addLine, newLine, polygonArr, lineElement)
         }
 
         source?.addAll(lineElement)
+    }
+
+    private fun addText(
+        polygon: Polygon,
+        value: Int,
+        polygonArr: MutableList<Polygon>,
+        element: VectorElementVector
+    ) {
+        polygon.setMetaDataElement("HO_NM", Variant(value.toString()))
+        polygon.setMetaDataElement("SELECT", Variant("n"))
+
+        val addHoText = Text(
+            polygon.geometry.centerPos,
+            MapStyle.setTextStyle(MapColor.BLACK, MapConst.FONT_SIZE),
+            value.toString()
+        )
+
+        polygonArr.add(polygon)
+
+        element.add(polygon)
+        element.add(addHoText)
     }
 
     /**
@@ -228,14 +237,51 @@ object MapLayer {
     fun addHo(activity: MapActivity, source: LocalVectorDataSource?) {
         runCatching {
             BaseMap.selectPolygonArr.size == 1
-        }.onSuccess {
-            activity.run {
-                if (!it) {
+        }.onSuccess { it ->
+            if(!it){
+                activity._viewModel.showSnackbar("한개의 호실만 선택해주세요.")
+            } else {
+                LogUtil.i("addHo Target Polygon => ${BaseMap.selectPolygonArr[0].geometry.bounds}")
+
+                val target = BaseMap.selectPolygonArr[0]
+                LogUtil.i(target.getMetaDataElement("HO_NM").string)
+
+                val leftResult = BaseMap.createPolygonArr.filter {
+                    it.getMetaDataElement("HO_NM").string.toInt() == target.getMetaDataElement("HO_NM").string.toInt() - 1
+                }
+
+                val flag = when {
+                    leftResult.isNotEmpty() -> false
+                    else -> true
+                }
+
+                if(flag){
+                    south = MapPos(target.bounds.min.x - MapConst.INCREASE_LINE_NUM, target.bounds.min.y)
+                    west = MapPos(target.bounds.max.x - MapConst.INCREASE_LINE_NUM, target.bounds.min.y)
+
+                    north = MapPos(target.bounds.max.x - MapConst.INCREASE_LINE_NUM, target.bounds.max.y)
+                    east = MapPos(target.bounds.min.x - MapConst.INCREASE_LINE_NUM, target.bounds.max.y)
+
+                    val hoVector = MapPosVector()
+                    hoVector.apply { add(south); add(west); add(north); add(east) }
+
+                    val addHo = Polygon(
+                        hoVector,
+                        MapStyle.setPolygonStyle(
+                            MapColor.NAVY,
+                            MapColor.NAVY,
+                            2F
+                        )
+                    )
+
+                    hoElement.add(addHo)
+                    source?.addAll(hoElement)
                 } else {
+                    BaseMap.mapViewModel.showSnackbar("호실을 추가 할 수 없습니다.")
                 }
             }
         }.onFailure {
-            throw BaseException("add Ho Event 에러 발생")
+            LogUtil.e(it.toString())
         }
     }
 
