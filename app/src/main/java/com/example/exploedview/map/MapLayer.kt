@@ -6,18 +6,19 @@ import com.carto.core.MapPosVector
 import com.carto.core.Variant
 import com.carto.datasources.LocalVectorDataSource
 import com.carto.geometry.Geometry
+import com.carto.ui.MapView
 import com.carto.vectorelements.Polygon
 import com.carto.vectorelements.Text
 import com.carto.vectorelements.VectorElementVector
 import com.example.exploedview.MapActivity
 import com.example.exploedview.base.BaseException
-import com.example.exploedview.extension.max
+import com.example.exploedview.extension.getMaxValue
 import com.example.exploedview.util.LogUtil
 import com.example.exploedview.util.MapColor
 
 object MapLayer {
 
-    private var maxArr = ArrayList<Double>()
+    private var posArr = ArrayList<Double>()
     private var params: Double? = null
     private var filterArr: MutableList<Polygon>? = null
 
@@ -26,9 +27,9 @@ object MapLayer {
     private lateinit var north: MapPos
     private lateinit var east: MapPos
 
-    var floorElement: VectorElementVector = VectorElementVector()
-    var lineElement: VectorElementVector = VectorElementVector()
-    var hoElement: VectorElementVector = VectorElementVector()
+    private var floorElement: VectorElementVector = VectorElementVector()
+    private var lineElement: VectorElementVector = VectorElementVector()
+    private var hoElement: VectorElementVector = VectorElementVector()
 
     /**
      * 공동주택 전개도 레이어
@@ -50,7 +51,7 @@ object MapLayer {
             if (features != null) {
 
                 val total = features.featureCount
-                (context as MapActivity).viewDataBinding.txtTotal.text = total.toString()
+                (context as MapActivity).binding.txtTotal.text = total.toString()
 
                 for (i in 0 until total) {
 
@@ -89,9 +90,7 @@ object MapLayer {
 
                         val centerPos = MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y)
                         val middlePos = MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y - minusNum)
-//                    val botPos =
-//                        MapPos(createPolygon.geometry.centerPos.x, middlePos.y - minusNum)
-//
+
                         elements.add(
                             Text(
                                 centerPos,
@@ -106,13 +105,6 @@ object MapLayer {
                                 BaseMap.getPropertiesStringValue(createPolygon, "HU_NUM")
                             )
                         )
-//                        elements.add(
-//                            Text(
-//                                botPos,
-//                                MapStyle.setTextStyle(MapElementColor.set(ColorEnum.BLACK), 30F),
-//                                cPoedTxt
-//                            )
-//                        )
 
                     }
 
@@ -201,7 +193,7 @@ object MapLayer {
                 )
             )
 
-            val newLine = increasLine(it)
+            val newLine = increaseLine(it)
             this.addText(addLine, newLine, polygonArr, lineElement)
         }
 
@@ -242,28 +234,21 @@ object MapLayer {
         arr.add("위로")
         arr.add("아래로")
 
-        activity._viewModel.showAlertListDialog(arr)
+        activity.vm.showAlertListDialog(arr)
     }
 
     /**
      * 호실 추가
      * @param source LocalVectorDataSource?
      */
-    fun addHo(activity: MapActivity, source: LocalVectorDataSource?, pos: Int) {
+    fun addHo(source: LocalVectorDataSource?, pos: Int) {
         runCatching {
             BaseMap.selectPolygonArr.size
 
         }.onSuccess {
             when {
-                it == 0 -> {
-                    activity._viewModel.showSnackbar("선택된 호실이 존재하지 않습니다.")
-                    LogUtil.w("선택된 호실이 존재하지 않습니다.")
-                }
-
-                it > 1 -> {
-                    activity._viewModel.showSnackbar("한개의 호실만 선택해주세요.")
-                    LogUtil.w("한개의 호실만 선택해주세요.")
-                }
+                it == 0 -> BaseMap.activity.vm.showSnackbarString("선택된 호실이 없습니다.")
+                it > 1  -> BaseMap.activity.vm.showSnackbarString("하나의 호실만 선택해주세요.")
 
                 else -> {
                     val target = BaseMap.selectPolygonArr[0]
@@ -323,11 +308,6 @@ object MapLayer {
 
                     hoElement.add(addHo)
                     source?.addAll(hoElement)
-
-//                    } else {
-//                        BaseMap.mapViewModel.showSnackbar("호실을 추가 할 수 없습니다.")
-//                        LogUtil.w("호실을 추가 할 수 없습니다.")
-//                    }
                 }
             }
         }.onFailure {
@@ -350,21 +330,21 @@ object MapLayer {
         type: MapLayerName,
     ) {
         clear(source)
-        maxArr.clear()
+        posArr.clear()
         filterArr?.clear()
 
         params = 0.0
 
         when (type) {
             MapLayerName.ADD_FLOOR -> {
-                polygonArr.map { maxArr.add(it.bounds.max.y) }
-                params = maxArr.max(maxArr)
+                polygonArr.map { posArr.add(it.bounds.max.y) }
+                params = posArr.getMaxValue()
                 filterArr = polygonArr.filter { it.bounds.max.y == params } as MutableList<Polygon>
             }
 
             MapLayerName.ADD_LINE -> {
-                polygonArr.map { maxArr.add(it.bounds.max.x) }
-                params = maxArr.max(maxArr)
+                polygonArr.map { posArr.add(it.bounds.max.x) }
+                params = posArr.getMaxValue()
                 filterArr = polygonArr.filter { it.bounds.max.x == params } as MutableList<Polygon>
             }
 
@@ -397,10 +377,56 @@ object MapLayer {
      * @param it Polygon
      * @return Int
      */
-    private fun increasLine(it: Polygon): Int {
+    private fun increaseLine(it: Polygon): Int {
         val increaseHo = it.getMetaDataElement("HO_NM").string.toInt() + 1
         BaseMap.addFeatures(it.geometry, increaseHo)
         return it.getMetaDataElement("HO_NM").string.toInt() + 1
+    }
+
+    /**
+     * MapLayer 초기화
+     * @param baseMap BaseMap
+     * @param mapView MapView
+     * @return Boolean
+     */
+    fun clearLayer(baseMap: BaseMap, mapView: MapView): Boolean {
+
+        return try {
+            baseMap.clickPosArr.clear()
+
+            baseMap.containsDataSource?.clear()
+            baseMap.addFloorDataSource?.clear()
+            baseMap.addLineDataSource?.clear()
+            baseMap.addHoDataSource?.clear()
+
+            floorElement.clear()
+            lineElement.clear()
+            hoElement.clear()
+
+            baseMap.explodedViewSource?.clear()
+            explodedView(baseMap.activity, baseMap.explodedViewSource, baseMap.createPolygonArr)
+
+            baseMap.selectPolygonArr.clear()
+            baseMap.containsPolygonArr.clear()
+
+            baseMap.activity.vm.apply {
+                getTotalExplodedPolygon(baseMap.createPolygonArr.size)
+                getBaseLayers(mapView.layers.count())
+                getSelectExplodedPolygon(baseMap.selectPolygonArr.size)
+                getGroupExplodedPolygon(baseMap.containsPolygonArr.size)
+                getCoord("0,0")
+                getAddFloor(baseMap.addFloorDataSource?.all!!.size().toInt())
+                getAddLine(baseMap.addLineDataSource?.all!!.size().toInt())
+                getAddHo(baseMap.addHoDataSource?.all!!.size().toInt())
+                getContains(baseMap.containsDataSource?.all!!.size().toInt())
+            }
+
+            true
+
+        } catch (e: Exception) {
+            false
+        }
+
     }
 
 }

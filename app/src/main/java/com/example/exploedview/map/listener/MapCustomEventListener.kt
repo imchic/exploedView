@@ -73,7 +73,7 @@ class MapCustomEventListener(
         super.onMapMoved()
         try {
             BaseMap.activity.runOnUiThread {
-                BaseMap.mapViewModel.getCoord.value = "${_mapView.focusPos.x} ${_mapView.focusPos.y}"
+                BaseMap.activity.vm.getCoord("${_mapView.focusPos.x} ${_mapView.focusPos.y}")
             }
         } catch (e: BaseException) {
             LogUtil.e(e.toString())
@@ -93,9 +93,9 @@ class MapCustomEventListener(
 //                    i("single map click!")
                     _posArr?.add(mapClickInfo.clickPos)
                 }
-                ClickType.CLICK_TYPE_LONG -> i("Long map click!")
-                ClickType.CLICK_TYPE_DOUBLE -> i("Double map click!")
-                ClickType.CLICK_TYPE_DUAL -> i("Dual map click!")
+//                ClickType.CLICK_TYPE_LONG -> i("Long map click!")
+//                ClickType.CLICK_TYPE_DOUBLE -> i("Double map click!")
+//                ClickType.CLICK_TYPE_DUAL -> i("Dual map click!")
                 else -> throw Exception("유효하지 않는 이벤트 발생")
             }
 
@@ -105,7 +105,7 @@ class MapCustomEventListener(
             }
 
             mapClickInfo.clickPos
-            val popupStyle = MapStyle.setBallonPopupStyle(10)
+            val popupStyle = MapStyle.setBalloonPopupStyle(10)
             val clickPosCnt: Int? = _posArr?.size
             val clickPosCntTxt = "포인트의 개수 : $clickPosCnt"
 
@@ -151,7 +151,7 @@ class MapCustomEventListener(
                         )
                     )
 
-                    i("click create polygon => $posVector")
+//                    i("click create polygon => $posVector")
                     element.add(_polygonSymbol)
 
                     _popup = BalloonPopup(_polygonSymbol?.geometry?.centerPos, popupStyle, "꼭지점을 이용하여 영역을 지정해주세요.", clickPosCntTxt)
@@ -160,7 +160,7 @@ class MapCustomEventListener(
 
             }
 
-            i("element size => ${element.size()}")
+//            i("element size => ${element.size()}")
             _source?.clear()
             _source?.addAll(element)
 

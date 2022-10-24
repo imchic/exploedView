@@ -1,35 +1,52 @@
 package com.example.exploedview.map
 
+import androidx.lifecycle.viewModelScope
 import com.example.exploedview.base.BaseViewModel
-import com.example.exploedview.util.SingleLiveEvent
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 
-open class MapViewModel : BaseViewModel(){
+/**
+ * MapViewModel
+ * @property _mapEventFlow MutableSharedFlow<MapEvent>
+ * @property mapEventFlow SharedFlow<MapEvent>
+ */
+open class MapViewModel : BaseViewModel() {
 
-//    private val _getSelectExplodedPolygon = SingleLiveEvent<Any>()
-//    val getSelectExplodedPolygon: SingleLiveEvent<Any> get() = _getSelectExplodedPolygon
+    private val _mapEventFlow = MutableSharedFlow<MapEvent>()
+    val mapEventFlow = _mapEventFlow.asSharedFlow()
 
-    val getMapEvent: SingleLiveEvent<String> by lazy { SingleLiveEvent() }
+    fun getTotalExplodedPolygon(data: Int) = mapEvent(MapEvent.GetExplodedViewLayer(data))
+    fun getBaseLayers(layers: Int) = mapEvent(MapEvent.GetBaseLayers(layers))
+    fun getSelectExplodedPolygon(cnt: Int) = mapEvent(MapEvent.GetSelectExplodedPolygon(cnt))
+    fun getGroupExplodedPolygon(cnt: Int) = mapEvent(MapEvent.GetGroupExplodedPolygon(cnt))
+    fun setLayerReadStatus(status: Boolean) = mapEvent(MapEvent.SetLayerReadStatus(status))
+    fun getCoord(coord: String) = mapEvent(MapEvent.GetCoordinates(coord))
+    fun getAddFloor(cnt: Int) = mapEvent(MapEvent.GetAddFloorCnt(cnt))
+    fun getAddLine(cnt: Int) = mapEvent(MapEvent.GetAddLineCnt(cnt))
+    fun getAddHo(cnt: Int) = mapEvent(MapEvent.GetAddHoCnt(cnt))
+    fun getContains(cnt: Int) = mapEvent(MapEvent.GetContainsCnt(cnt))
+    fun setBaseMap(flag: Boolean) = mapEvent(MapEvent.SetBaseMap(flag))
 
-    val getTotalExplodedPolygon: SingleLiveEvent<Int> by lazy { SingleLiveEvent() }
+    private fun mapEvent(event: MapEvent) {
+        viewModelScope.launch {
+            _mapEventFlow.emit(event)
+        }
+    }
 
-    val getBaseLayers: SingleLiveEvent<Int> by lazy { SingleLiveEvent() }
-
-    val getSelectExplodedPolygon: SingleLiveEvent<Int> by lazy { SingleLiveEvent() }
-
-    val getGroupExplodedPolygon: SingleLiveEvent<Int> by lazy { SingleLiveEvent() }
-
-    val getLayerReadStatus: SingleLiveEvent<Boolean> by lazy { SingleLiveEvent() }
-
-    val getCoord: SingleLiveEvent<String> by lazy { SingleLiveEvent() }
-
-    val getAddFloorCnt: SingleLiveEvent<Int> by lazy { SingleLiveEvent() }
-
-    val getAddLineCnt: SingleLiveEvent<Int> by lazy { SingleLiveEvent() }
-
-    val getAddHoCnt: SingleLiveEvent<Int> by lazy { SingleLiveEvent() }
-
-    val getContainsCnt: SingleLiveEvent<Int> by lazy { SingleLiveEvent() }
-
+    sealed class MapEvent {
+        data class GetExplodedViewLayer(val data: Int) : MapEvent()
+        data class GetBaseLayers(val layers: Int) : MapEvent()
+        data class GetSelectExplodedPolygon(val cnt: Int) : MapEvent()
+        data class GetGroupExplodedPolygon(val cnt: Int) : MapEvent()
+        data class SetLayerReadStatus(val status: Boolean) : MapEvent()
+        data class GetCoordinates(val coord: String) : MapEvent()
+        data class GetAddFloorCnt(val cnt: Int) : MapEvent()
+        data class GetAddLineCnt(val cnt: Int) : MapEvent()
+        data class GetAddHoCnt(val cnt: Int) : MapEvent()
+        data class GetContainsCnt(val cnt: Int) : MapEvent()
+        data class SetBaseMap(val flag: Boolean) : MapEvent()
+    }
 
 
 }

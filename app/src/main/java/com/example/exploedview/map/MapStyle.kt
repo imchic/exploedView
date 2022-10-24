@@ -1,28 +1,18 @@
 package com.example.exploedview.map
 
-import com.carto.core.Variant
-import com.carto.datasources.GeoJSONVectorTileDataSource
 import com.carto.graphics.Color
-import com.carto.layers.VectorTileLayer
 import com.carto.styles.*
-import com.carto.ui.MapView
-import com.carto.utils.AssetUtils
-import com.carto.utils.ZippedAssetPackage
-import com.carto.vectortiles.MBVectorTileDecoder
-import com.example.exploedview.MapActivity
-import com.example.exploedview.util.LogUtil
 import com.example.exploedview.util.MapColor
-import java.io.InputStream
 
 
 object MapStyle {
 
     // style
-    private var _pointStyleBuilder = PointStyleBuilder()
-    private var _lineStyleBuilder = LineStyleBuilder()
-    private var _polygonStyleBuilder = PolygonStyleBuilder()
-    private var _textStyleBuilder = TextStyleBuilder()
-    private var _ballonPopupStyleBuilder = BalloonPopupStyleBuilder()
+    private var pointStyleBuilder = PointStyleBuilder()
+    private var lineStyleBuilder = LineStyleBuilder()
+    private var polygonStyleBuilder = PolygonStyleBuilder()
+    private var textStyleBuilder = TextStyleBuilder()
+    private var balloonPopupStyleBuilder = BalloonPopupStyleBuilder()
 
 
     /**
@@ -32,12 +22,11 @@ object MapStyle {
      * @return PointStyle?
      */
     fun setPointStyle(color: Color, size: Float): PointStyle? {
-        _pointStyleBuilder.apply {
+        pointStyleBuilder.apply {
             this.color = color
             this.size = size
             return this.buildStyle()
         }
-
     }
 
     /**
@@ -48,13 +37,12 @@ object MapStyle {
      * @return LineStyle?
      */
     fun setLineStyle(color: Color, type: LineJoinType, width: Float): LineStyle? {
-        _lineStyleBuilder.apply {
+        lineStyleBuilder.apply {
             this.color = color
             lineJoinType = type
             this.width = width
             return buildStyle()
         }
-
     }
 
     /**
@@ -64,10 +52,10 @@ object MapStyle {
      * @return TextStyle?
      */
     fun setTextStyle(color: Color, fontSize: Float): TextStyle? {
-        val _color = Color(color.r, color.g, color.b, 255)
-        _textStyleBuilder.run {
-            this.color = _color
-            strokeColor = _color
+        val textColor = Color(color.r, color.g, color.b, 255)
+        textStyleBuilder.run {
+            this.color = textColor
+            strokeColor = textColor
             strokeWidth = 0.1F
             this.fontSize = fontSize
             textMargins = TextMargins(6, 6, 6, 6)
@@ -75,7 +63,6 @@ object MapStyle {
             isScaleWithDPI = true
             return this.buildStyle()
         }
-
     }
 
     /**
@@ -86,12 +73,12 @@ object MapStyle {
      * @return PolygonStyle?
      */
     fun setPolygonStyle(polygonColor: Color, lineColor: Color, lineWidth: Float): PolygonStyle? {
-        val _color = Color(polygonColor.r, polygonColor.g, polygonColor.b, 75)
-        _polygonStyleBuilder.color = _color
-        _lineStyleBuilder.color = lineColor
-        _lineStyleBuilder.width = lineWidth
-        _polygonStyleBuilder.lineStyle = _lineStyleBuilder.buildStyle()
-        return _polygonStyleBuilder.buildStyle()
+        val polyColor = Color(polygonColor.r, polygonColor.g, polygonColor.b, 75)
+        polygonStyleBuilder.color = polyColor
+        lineStyleBuilder.color = lineColor
+        lineStyleBuilder.width = lineWidth
+        polygonStyleBuilder.lineStyle = lineStyleBuilder.buildStyle()
+        return polygonStyleBuilder.buildStyle()
     }
 
     /**
@@ -99,10 +86,9 @@ object MapStyle {
      * @param radius Int
      * @return BalloonPopupStyle?
      */
-    fun setBallonPopupStyle(radius: Int): BalloonPopupStyle? {
-
-        _ballonPopupStyleBuilder.apply {
-//            cornerRadius = radius
+    fun setBalloonPopupStyle(radius: Int?): BalloonPopupStyle? {
+        balloonPopupStyleBuilder.apply {
+            cornerRadius = radius ?: 0
             leftColor = Color(MapConst.STROKE_OPACITY, 0, 0, 0)
             leftMargins = BalloonPopupMargins(6, 6, 6, 6)
             rightMargins = BalloonPopupMargins(2, 6, 12, 6)
@@ -113,11 +99,10 @@ object MapStyle {
             descriptionFontSize = 14
             placementPriority = 1
         }
-
-        return _ballonPopupStyleBuilder.buildStyle()
+        return balloonPopupStyleBuilder.buildStyle()
     }
 
-    fun createGeoJSONLayer(activity: MapActivity, mapView: MapView) {
+    /*fun createGeoJSONLayer(activity: MapActivity, mapView: MapView) {
 
         val dataSource = GeoJSONVectorTileDataSource(0, mapView.zoom.toInt())
 
@@ -140,6 +125,6 @@ object MapStyle {
             LogUtil.e(e.toString())
         }
 
-    }
+    }*/
 
 }

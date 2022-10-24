@@ -17,13 +17,13 @@ import com.example.exploedview.map.BaseMap
 import com.example.exploedview.util.LogUtil
 import com.example.exploedview.util.MapColor
 
-class VectorElementEditEventListener(val source: LocalVectorDataSource?) : VectorEditEventListener() {
+class VectorElementEditEventListener(private val source: LocalVectorDataSource?) : VectorEditEventListener() {
 
-    private var styleNormal: PointStyle? = null
-    private var styleVirtual: PointStyle? = null
-    private var styleSelected: PointStyle? = null
+    private lateinit var styleNormal: PointStyle
+    private lateinit var styleVirtual: PointStyle
+    private lateinit var styleSelected: PointStyle
 
-    private var modifyElementBounds: MapBounds? = null
+    private lateinit var modifyElementBounds: MapBounds
 
     override fun onElementModify(element: VectorElement?, geometry: Geometry?) {
 
@@ -34,9 +34,11 @@ class VectorElementEditEventListener(val source: LocalVectorDataSource?) : Vecto
                 is Point -> {
                     element.geometry = geometry as PointGeometry
                 }
+
                 is Line -> {
                     element.geometry = geometry as LineGeometry
                 }
+
                 is Polygon -> {
                     element.geometry = geometry as PolygonGeometry
 
@@ -47,8 +49,8 @@ class VectorElementEditEventListener(val source: LocalVectorDataSource?) : Vecto
             }
 
             BaseMap.createPolygonArr.forEach {
-                val withinPoly = modifyElementBounds?.contains(it.bounds)
-                if (withinPoly == true)
+                val withinPoly = modifyElementBounds.contains(it.bounds)
+                if (withinPoly)
                     BaseMap.containsPolygonArr.add(it)
             }
 
@@ -59,20 +61,10 @@ class VectorElementEditEventListener(val source: LocalVectorDataSource?) : Vecto
                             title = "드래그를 이용하여 영역을 지정해주세요."
                             description = "포함된 폴리곤의 개수 : ${BaseMap.containsPolygonArr.size}"
                         }.also {
-                            BaseMap.mapViewModel.getGroupExplodedPolygon.value = BaseMap.containsPolygonArr.size
+                            BaseMap.activity.vm.getGroupExplodedPolygon(BaseMap.containsPolygonArr.size)
                             BaseMap.selectPolygonArr.clear()
-                            BaseMap.activity.viewDataBinding.txtSelect.text = BaseMap.selectPolygonArr.size.toString()
                         }
                     }
-//                    is Polygon -> {
-//                        (source.all?.get(i.toInt()) as Polygon).apply {
-//                            style = MapStyle.setPolygonStyle(
-//                                MapElementColor.set(ColorEnum.MAGENTA),
-//                                MapElementColor.set(ColorEnum.MAGENTA),
-//                                2F
-//                            )
-//                        }
-//                    }
                 }
 
             }
@@ -102,18 +94,19 @@ class VectorElementEditEventListener(val source: LocalVectorDataSource?) : Vecto
 
     override fun onSelectDragPointStyle(
         element: VectorElement?,
-        dragPointStyle: VectorElementDragPointStyle
-    ): PointStyle? {
-        if (null == styleNormal) {
-            val builder = PointStyleBuilder()
-            builder.color = MapColor.RED
-            builder.size = 15f
-            styleNormal = builder.buildStyle()
-            builder.size = 15f
-            styleVirtual = builder.buildStyle()
-            builder.color = MapColor.RED
-            builder.size = 15f
-            styleSelected = builder.buildStyle()
+        dragPointStyle: VectorElementDragPointStyle,
+    ): PointStyle {
+
+        val builder = PointStyleBuilder()
+        builder.run {
+            color = MapColor.RED
+            size = 15f
+            styleNormal = buildStyle()
+            size = 15f
+            styleVirtual = buildStyle()
+            color = MapColor.RED
+            size = 15f
+            styleSelected = buildStyle()
         }
 
         if (dragPointStyle == VectorElementDragPointStyle.VECTOR_ELEMENT_DRAG_POINT_STYLE_NORMAL) {

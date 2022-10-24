@@ -6,7 +6,6 @@ import com.carto.ui.VectorElementClickInfo
 import com.carto.vectorelements.Text
 import com.example.exploedview.map.BaseMap
 import com.example.exploedview.map.MapLayerName
-import com.example.exploedview.util.LogUtil
 
 class VectorElementSelectEventListener(private val layer: EditableVectorLayer?) :
     VectorElementEventListener() {
@@ -20,7 +19,7 @@ class VectorElementSelectEventListener(private val layer: EditableVectorLayer?) 
             }
         }
 
-        LogUtil.i("선택된 레이어 : $selectLayerName , ${clickInfo.clickPos}")
+//        LogUtil.i("선택된 레이어 : $selectLayerName , ${clickInfo.clickPos}")
         return true
     }
 
@@ -29,14 +28,14 @@ class VectorElementSelectEventListener(private val layer: EditableVectorLayer?) 
             selectedVectorElement = element.vectorElement
 
             val centerPos = element.vectorElement.geometry.centerPos
-            LogUtil.i(centerPos.toString())
+//            LogUtil.i(centerPos.toString())
 
             when (element.vectorElement) {
                 is Text -> {
-                    LogUtil.i("vectorElement Type => Text")
+//                    LogUtil.i("vectorElement Type => Text")
                 }
                 else -> {
-                    LogUtil.i("vectorElement Type => EditableLayer")
+//                    LogUtil.i("vectorElement Type => EditableLayer")
                     BaseMap.select(element.vectorElement.geometry)
                 }
             }

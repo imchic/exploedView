@@ -2,20 +2,12 @@ package com.example.exploedview.map
 
 object MapConst {
 
-    var SELECT: Boolean = false
-    var GROUP: Boolean = false
-    var CONTAINS: Boolean = false
-
     const val FONT_SIZE = 20F
-
-    const val FILL_OPACITY: Short = 125
     const val STROKE_OPACITY: Short = 255
 
     // EPSG:4326
     const val INCREASE_FLOOR_NUM = 7.50998
     const val INCREASE_LINE_NUM = 10.000002
-
-    var AZIMUTH = ""
 
     val PROPERTIES_VALUE_ARR = arrayListOf(
         "APT_NO",
@@ -49,10 +41,6 @@ object MapConst {
         "좌표X" to "COORD_X",
         "좌표Y" to "COORD_Y",
     )
-
-    // EPSG:3857
-//    const val INCREASE_FLOOR_NUM = 844600.069804
-//    const val INCREASE_LINE_NUM = 1224514.398726
 
     /**
      *  Google Mercator: 구글지도/빙지도/야후지도/OSM 등 에서 사용중인 좌표계
