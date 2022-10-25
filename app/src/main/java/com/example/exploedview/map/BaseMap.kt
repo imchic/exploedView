@@ -40,18 +40,18 @@ object BaseMap : MapViewModel() {
     private lateinit var proj: Projection
 
     // source
-    var explodedViewSource: LocalVectorDataSource? = null
-    var containsDataSource: LocalVectorDataSource? = null
-    var addFloorDataSource: LocalVectorDataSource? = null
-    var addLineDataSource: LocalVectorDataSource? = null
-    var addHoDataSource: LocalVectorDataSource? = null
+    lateinit var explodedViewSource: LocalVectorDataSource
+    lateinit var containsDataSource: LocalVectorDataSource
+    lateinit var addFloorDataSource: LocalVectorDataSource
+    lateinit var addLineDataSource: LocalVectorDataSource
+    lateinit var addHoDataSource: LocalVectorDataSource
 
     // layer
-    private var explodedViewLayer: EditableVectorLayer? = null
-    private var groupLayer: EditableVectorLayer? = null
-    private var floorUpLayer: EditableVectorLayer? = null
-    private var addLineLayer: EditableVectorLayer? = null
-    private var addHoLayer: EditableVectorLayer? = null
+    private val explodedViewLayer: EditableVectorLayer by lazy { EditableVectorLayer(explodedViewSource) }
+    private val groupLayer: EditableVectorLayer by lazy { EditableVectorLayer(containsDataSource) }
+    private val floorUpLayer: EditableVectorLayer by lazy { EditableVectorLayer(addFloorDataSource) }
+    private val addLineLayer: EditableVectorLayer by lazy { EditableVectorLayer(addLineDataSource) }
+    private val addHoLayer: EditableVectorLayer by lazy { EditableVectorLayer(addHoDataSource) }
 
     // element arr
     var createPolygonArr = mutableListOf<Polygon>()
@@ -72,7 +72,6 @@ object BaseMap : MapViewModel() {
      * @param mapView MapView
      * @param activity Activity
      * @param context Context
-     * @param viewModel MapViewModel
      */
     fun initBaseMap(mapView: MapView, activity: Activity, context: Context) {
 
@@ -166,7 +165,7 @@ object BaseMap : MapViewModel() {
     /**
      * 레이어 세팅
      */
-    private fun setLayer(layers: MutableList<EditableVectorLayer?>) {
+    private fun setLayer(layers: MutableList<EditableVectorLayer>) {
 
         var source: LocalVectorDataSource?
         val nameArr = mutableListOf<String>()
@@ -211,7 +210,7 @@ object BaseMap : MapViewModel() {
                     nameArr.add(mapView.layers.get(i).metaData.get("name").string)
                 }
                 LogUtil.i("생성된 레이어 이름 : ${nameArr}, 현재 생성된 레이어의 갯수 : ${getLayerCount()}")
-                activity.vm.getBaseLayers(getLayerCount())
+                activity.vm.getBaseLayersCount(getLayerCount())
             }
     }
 
@@ -245,8 +244,6 @@ object BaseMap : MapViewModel() {
 
         CoroutineScope(Dispatchers.Default).launch {
 
-            activity.vm.showLoadingBar(true)
-
             val job: Deferred<Boolean> = async(Dispatchers.IO) {
                 val result = MapLayer.clearLayer(BaseMap, mapView)
                 result
@@ -275,11 +272,11 @@ object BaseMap : MapViewModel() {
             if (!bool) throw BaseException("그룹영역이 지정되지 않았습니다.")
         }.onSuccess {
             clickPosArr.clear()
-            containsDataSource?.clear()
+            containsDataSource.clear()
 
             group(parents, child)
 
-        }.onFailure { it: Throwable ->
+        }.onFailure {
             LogUtil.e("group status: $bool, $it")
             activity.vm.showSnackbarString(it.toString())
         }
@@ -404,23 +401,29 @@ object BaseMap : MapViewModel() {
     }
 
     private fun getPropertiesStringValueArr(polygon: Polygon) {
+
         var result = ""
+
         for ((key, value) in MapConst.PROPERTIES_VALUE_MAP) {
             result += "$key : ${polygon.metaData.get(value).string} \n"
         }
+
         val arr = ArrayList<String>() // alert data
-        arr.add("레이어 정보")
-        arr.add(result)
+        arr.run {
+            add("레이어 정보")
+            add(result)
+        }
+
         activity.runOnUiThread {
 
             val isLayerShowToggle = MapEvent.SetLayerReadStatus(activity.binding.switchRead.isChecked).status
 
-            if (isLayerShowToggle) {
-                activity.vm.showAlertDialog(arr)
-            } else {
-                activity.vm.showSnackbarString("레이어 정보를 읽을 수 없습니다.")
-            }
-
+            runCatching {
+                if (!isLayerShowToggle) throw BaseException("레이어 View 상태값 : False")
+            }.fold(
+                onSuccess = { activity.vm.showAlertDialog(arr) },
+                onFailure = { LogUtil.e(it.toString()) }
+            )
         }
     }
 

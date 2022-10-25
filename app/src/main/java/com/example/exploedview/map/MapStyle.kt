@@ -22,7 +22,7 @@ object MapStyle {
      * @return PointStyle?
      */
     fun setPointStyle(color: Color, size: Float): PointStyle? {
-        pointStyleBuilder.apply {
+        pointStyleBuilder.run {
             this.color = color
             this.size = size
             return this.buildStyle()
@@ -37,7 +37,7 @@ object MapStyle {
      * @return LineStyle?
      */
     fun setLineStyle(color: Color, type: LineJoinType, width: Float): LineStyle? {
-        lineStyleBuilder.apply {
+        lineStyleBuilder.run {
             this.color = color
             lineJoinType = type
             this.width = width
@@ -87,7 +87,7 @@ object MapStyle {
      * @return BalloonPopupStyle?
      */
     fun setBalloonPopupStyle(radius: Int?): BalloonPopupStyle? {
-        balloonPopupStyleBuilder.apply {
+        balloonPopupStyleBuilder.run {
             cornerRadius = radius ?: 0
             leftColor = Color(MapConst.STROKE_OPACITY, 0, 0, 0)
             leftMargins = BalloonPopupMargins(6, 6, 6, 6)

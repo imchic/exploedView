@@ -17,16 +17,17 @@ open class MapViewModel : BaseViewModel() {
     val mapEventFlow = _mapEventFlow.asSharedFlow()
 
     fun getTotalExplodedPolygon(data: Int) = mapEvent(MapEvent.GetExplodedViewLayer(data))
-    fun getBaseLayers(layers: Int) = mapEvent(MapEvent.GetBaseLayers(layers))
+    fun getBaseLayersCount(layers: Int) = mapEvent(MapEvent.GetBaseLayers(layers))
     fun getSelectExplodedPolygon(cnt: Int) = mapEvent(MapEvent.GetSelectExplodedPolygon(cnt))
     fun getGroupExplodedPolygon(cnt: Int) = mapEvent(MapEvent.GetGroupExplodedPolygon(cnt))
     fun setLayerReadStatus(status: Boolean) = mapEvent(MapEvent.SetLayerReadStatus(status))
-    fun getCoord(coord: String) = mapEvent(MapEvent.GetCoordinates(coord))
-    fun getAddFloor(cnt: Int) = mapEvent(MapEvent.GetAddFloorCnt(cnt))
-    fun getAddLine(cnt: Int) = mapEvent(MapEvent.GetAddLineCnt(cnt))
+    fun getCoordinates(coordinates: String) = mapEvent(MapEvent.GetCoordinates(coordinates))
+    fun getAddFloorValue(cnt: Int) = mapEvent(MapEvent.GetAddFloorCnt(cnt))
+    fun getAddLIneValue(cnt: Int) = mapEvent(MapEvent.GetAddLineCnt(cnt))
     fun getAddHo(cnt: Int) = mapEvent(MapEvent.GetAddHoCnt(cnt))
     fun getContains(cnt: Int) = mapEvent(MapEvent.GetContainsCnt(cnt))
     fun setBaseMap(flag: Boolean) = mapEvent(MapEvent.SetBaseMap(flag))
+    fun clearMap(flag: Boolean) = mapEvent(MapEvent.ClearMap(flag))
 
     private fun mapEvent(event: MapEvent) {
         viewModelScope.launch {
@@ -40,12 +41,13 @@ open class MapViewModel : BaseViewModel() {
         data class GetSelectExplodedPolygon(val cnt: Int) : MapEvent()
         data class GetGroupExplodedPolygon(val cnt: Int) : MapEvent()
         data class SetLayerReadStatus(val status: Boolean) : MapEvent()
-        data class GetCoordinates(val coord: String) : MapEvent()
+        data class GetCoordinates(val coordinates: String) : MapEvent()
         data class GetAddFloorCnt(val cnt: Int) : MapEvent()
         data class GetAddLineCnt(val cnt: Int) : MapEvent()
         data class GetAddHoCnt(val cnt: Int) : MapEvent()
         data class GetContainsCnt(val cnt: Int) : MapEvent()
         data class SetBaseMap(val flag: Boolean) : MapEvent()
+        data class ClearMap(val flag: Boolean) : MapEvent()
     }
 
 

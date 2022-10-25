@@ -6,7 +6,7 @@ import com.example.exploedview.BuildConfig
 
 object LogUtil {
 
-    val classNm = Thread.currentThread().stackTrace[4].fileName.replace(".java", "::")
+    private val classNm = Thread.currentThread().stackTrace[4].fileName.replace(".java", "::")
 
     // 로그
     fun v(msg: String) {
@@ -18,7 +18,7 @@ object LogUtil {
     }
 
     fun i(msg: String) {
-        if (BuildConfig.DEBUG) Log.i(classNm, "정보 \uD83D\uDC49\uD83D\uDC49" + buildLogMsg(msg))
+        if (BuildConfig.DEBUG) Log.i(classNm, "인포 \uD83D\uDC49\uD83D\uDC49" + buildLogMsg(msg))
     }
 
     fun w(msg: String) {

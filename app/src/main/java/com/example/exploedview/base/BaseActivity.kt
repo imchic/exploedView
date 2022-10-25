@@ -28,8 +28,8 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
     abstract val vm: R
 
     // global widget
-    private var snackBar: Snackbar? = null
-    private var progressBar: CircularProgressIndicator? = null
+    private var sb: Snackbar? = null
+    private var pb: CircularProgressIndicator? = null
 
     /**
      * 레이아웃을 띄운 직후 호출.
@@ -88,7 +88,7 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
 
             initWidgetUI()
 
-            progressBar?.visibility = when(bool){
+            pb?.visibility = when(bool){
                 true -> View.VISIBLE
                 false -> View.GONE
             }
@@ -96,7 +96,7 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
         }
 
         is BaseViewModel.Event.ShowSnackBar -> {
-            snackBar?.run {
+            sb?.run {
                 setText(event.text)
                 animationMode = ANIMATION_MODE_SLIDE
                 show()
@@ -104,7 +104,7 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
         }
 
         is BaseViewModel.Event.ShowSnackbarString -> {
-            snackBar?.run {
+            sb?.run {
                 setText(event.text)
                 animationMode = ANIMATION_MODE_SLIDE
                 show()
@@ -152,15 +152,13 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
                 .show()
         }
 
-        else -> Unit
     }
 
     private fun initWidgetUI() {
 
-        if (progressBar == null) {
-            LogUtil.w("프로그래스바 최초 생성 최초!!!")
-            progressBar = CircularProgressIndicator(this)
-            progressBar?.run {
+        if (pb == null) {
+            pb = CircularProgressIndicator(this)
+            pb?.run {
                 isIndeterminate = true
                 isClickable = false
                 isFocusable = false
@@ -179,13 +177,13 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
             val ll = LinearLayout(this)
 
             ll.gravity = Gravity.CENTER
-            ll.addView(progressBar)
+            ll.addView(pb)
 
             layout.addView(ll, params)
 
         }
 
-        if(snackBar == null) snackBar = Snackbar.make(binding.root, "", Snackbar.LENGTH_SHORT)
+        if(sb == null) sb = Snackbar.make(binding.root, "", Snackbar.LENGTH_SHORT)
 
     }
 

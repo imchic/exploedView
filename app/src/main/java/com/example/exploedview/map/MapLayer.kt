@@ -409,14 +409,14 @@ object MapLayer {
             baseMap.selectPolygonArr.clear()
             baseMap.containsPolygonArr.clear()
 
-            baseMap.activity.vm.apply {
+            baseMap.activity.vm.run {
                 getTotalExplodedPolygon(baseMap.createPolygonArr.size)
-                getBaseLayers(mapView.layers.count())
+                getBaseLayersCount(mapView.layers.count())
                 getSelectExplodedPolygon(baseMap.selectPolygonArr.size)
                 getGroupExplodedPolygon(baseMap.containsPolygonArr.size)
-                getCoord("0,0")
-                getAddFloor(baseMap.addFloorDataSource?.all!!.size().toInt())
-                getAddLine(baseMap.addLineDataSource?.all!!.size().toInt())
+                getCoordinates("0,0")
+                getAddFloorValue(baseMap.addFloorDataSource?.all!!.size().toInt())
+                getAddLIneValue(baseMap.addLineDataSource?.all!!.size().toInt())
                 getAddHo(baseMap.addHoDataSource?.all!!.size().toInt())
                 getContains(baseMap.containsDataSource?.all!!.size().toInt())
             }

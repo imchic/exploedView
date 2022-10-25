@@ -54,14 +54,13 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#4dffffff"
+        android:background="#80FFFFFF"
         android:layout_margin="10dp"
         android:padding="10dp"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="@+id/cartoMapView"
-        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_bias="1"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:id="@+id/constraintLayout2">
 
         <TextView
@@ -69,18 +68,17 @@
             android:layout_height="0dp"
             android:text="info"
             android:drawablePadding="4dp"
-            
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:id="@+id/txt_info"
+            android:drawableTint="@color/md_theme_light_primary"
             app:drawableStartCompat="@drawable/ic_edit" />
 
         <TextView
             android:id="@+id/txt_total_title"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            
             android:text="Feature Cnt:"
             android:layout_margin="10dp"
             app:layout_constraintHorizontal_chainStyle="packed"
@@ -118,7 +116,6 @@
             android:id="@+id/txt_layer"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            
             android:text="value"
             android:layout_marginStart="10dp"
             app:layout_constraintHorizontal_chainStyle="packed"
@@ -131,7 +128,6 @@
             android:id="@+id/txt_select_title"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            
             android:text="Select Cnt:"
             app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintLeft_toLeftOf="parent"
@@ -143,7 +139,6 @@
             android:id="@+id/txt_select"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            
             android:text="value"
             android:layout_marginStart="10dp"
             app:layout_constraintHorizontal_chainStyle="packed"
@@ -168,7 +163,6 @@
             android:id="@+id/txt_group"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            
             android:text="value"
             android:layout_marginStart="10dp"
             app:layout_constraintHorizontal_chainStyle="packed"
@@ -181,7 +175,6 @@
             android:id="@+id/txt_coord_title"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            
             android:text="Coord:"
             app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintLeft_toLeftOf="parent"
@@ -195,7 +188,6 @@
             android:layout_height="0dp"
             android:layout_marginStart="10dp"
             android:text="value"
-            
             app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@id/txt_total_title"

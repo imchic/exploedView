@@ -9,6 +9,7 @@ import com.example.exploedview.map.MapLayer
 import com.example.exploedview.map.MapViewModel
 import com.example.exploedview.util.LogUtil
 import kotlinx.coroutines.*
+import okhttp3.internal.wait
 
 class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
 
@@ -17,12 +18,11 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
 
     private val context = this@MapActivity
 
-    override fun initViewStart() {
-        //BaseMap.initBaseMap(binding.cartoMapView, context, baseContext)
-    }
+    override fun initViewStart() {}
 
     override fun initDataBinding() {
         CoroutineScope(Dispatchers.Main).launch {
+            vm.showLoadingBar(true)
             repeatOnStarted {
                 vm.mapEventFlow.collect { event -> handleMapEvent(event) }
             }
@@ -53,13 +53,13 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
                         when (menuItem.itemId) {
                             R.id.addFloor -> {
                                 MapLayer.addFloor(BaseMap.addFloorDataSource, BaseMap.createPolygonArr)
-                                vm.getAddFloor(BaseMap.getPolygonElementCnt(BaseMap.addFloorDataSource))
+                                vm.getAddFloorValue(BaseMap.getPolygonElementCnt(BaseMap.addFloorDataSource))
                                 true
                             }
 
                             R.id.addLine -> {
                                 MapLayer.addLine(BaseMap.addLineDataSource, BaseMap.createPolygonArr)
-                                vm.getAddLine(BaseMap.getPolygonElementCnt(BaseMap.addLineDataSource))
+                                vm.getAddLIneValue(BaseMap.getPolygonElementCnt(BaseMap.addLineDataSource))
                                 true
                             }
 
@@ -70,7 +70,7 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
                             }
 
                             R.id.reset -> {
-                                BaseMap.clear()
+                                vm.clearMap(true)
                                 true
                             }
 
@@ -98,55 +98,67 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
      * @param mapEvent MapEvent
      */
     private fun handleMapEvent(mapEvent: MapViewModel.MapEvent) {
-        when (mapEvent) {
 
-            is MapViewModel.MapEvent.GetBaseLayers -> {
-                binding.txtLayer.text = mapEvent.layers.toString()
-            }
+        binding.run {
+            when (mapEvent) {
 
-            is MapViewModel.MapEvent.GetAddFloorCnt -> {
-                setBadgeNum(mapEvent.cnt, R.id.addFloor)
-            }
+                is MapViewModel.MapEvent.GetBaseLayers -> {
+                    txtLayer.text = mapEvent.layers.toString()
+                }
 
-            is MapViewModel.MapEvent.GetAddHoCnt -> {
-                setBadgeNum(mapEvent.cnt, R.id.addHo)
-            }
+                is MapViewModel.MapEvent.GetAddFloorCnt -> {
+                    setBadgeNum(mapEvent.cnt, R.id.addFloor)
+                }
 
-            is MapViewModel.MapEvent.GetAddLineCnt -> {
-                setBadgeNum(mapEvent.cnt, R.id.addLine)
-            }
+                is MapViewModel.MapEvent.GetAddHoCnt -> {
+                    setBadgeNum(mapEvent.cnt, R.id.addHo)
+                }
 
-            is MapViewModel.MapEvent.GetContainsCnt -> {
-                setBadgeNum(mapEvent.cnt, R.id.contains)
-            }
+                is MapViewModel.MapEvent.GetAddLineCnt -> {
+                    setBadgeNum(mapEvent.cnt, R.id.addLine)
+                }
 
-            is MapViewModel.MapEvent.GetCoordinates -> {
-                binding.txtCoord.text = mapEvent.coord
-            }
+                is MapViewModel.MapEvent.GetContainsCnt -> {
+                    setBadgeNum(mapEvent.cnt, R.id.contains)
+                }
 
-            is MapViewModel.MapEvent.GetGroupExplodedPolygon -> {
-                binding.txtGroup.text = mapEvent.cnt.toString()
-            }
+                is MapViewModel.MapEvent.GetCoordinates -> {
+                    txtCoord.text = mapEvent.coordinates
+                }
 
-            is MapViewModel.MapEvent.SetLayerReadStatus -> {
-                binding.switchRead.isChecked = mapEvent.status
-            }
+                is MapViewModel.MapEvent.GetGroupExplodedPolygon -> {
+                    txtGroup.text = mapEvent.cnt.toString()
+                }
 
-            is MapViewModel.MapEvent.GetSelectExplodedPolygon -> {
-                binding.txtSelect.text = mapEvent.cnt.toString()
-            }
+                is MapViewModel.MapEvent.SetLayerReadStatus -> {
+                    switchRead.isChecked = mapEvent.status
+                }
 
-            is MapViewModel.MapEvent.GetExplodedViewLayer -> {
-                binding.txtTotal.text = mapEvent.data.toString()
-            }
+                is MapViewModel.MapEvent.GetSelectExplodedPolygon -> {
+                    binding.txtSelect.text = mapEvent.cnt.toString()
+                }
 
-            is MapViewModel.MapEvent.SetBaseMap -> {
-                vm.showLoadingBar(true)
-                runCatching { if (!mapEvent.flag) throw BaseException("BaseMap 초기화 실패.") }
-                .fold(
-                    onSuccess = { BaseMap.initBaseMap(binding.cartoMapView, context, baseContext) },
-                    onFailure = { LogUtil.e(it.toString()) }
-                )
+                is MapViewModel.MapEvent.GetExplodedViewLayer -> {
+                    binding.txtTotal.text = mapEvent.data.toString()
+                }
+
+                is MapViewModel.MapEvent.SetBaseMap -> {
+                    runCatching { if (!mapEvent.flag) throw BaseException("BaseMap 생성 실패") }
+                        .fold(
+                            onSuccess = { BaseMap.initBaseMap(binding.cartoMapView, context, baseContext) },
+                            onFailure = { LogUtil.e(it.toString()) }
+                        )
+                }
+
+                is MapViewModel.MapEvent.ClearMap -> {
+                    vm.showLoadingBar(true)
+                    runCatching { if (!mapEvent.flag) throw BaseException("BaseMap Object 초기화 실패") }
+                        .fold(
+                            onSuccess = { BaseMap.clear() },
+                            onFailure = { LogUtil.e(it.toString()) }
+                        )
+                }
+
             }
         }
 

@@ -73,7 +73,7 @@ class MapCustomEventListener(
         super.onMapMoved()
         try {
             BaseMap.activity.runOnUiThread {
-                BaseMap.activity.vm.getCoord("${_mapView.focusPos.x} ${_mapView.focusPos.y}")
+                BaseMap.activity.vm.getCoordinates("${_mapView.focusPos.x} ${_mapView.focusPos.y}")
             }
         } catch (e: BaseException) {
             LogUtil.e(e.toString())
