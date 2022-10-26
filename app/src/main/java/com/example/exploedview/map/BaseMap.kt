@@ -3,6 +3,7 @@ package com.example.exploedview.map
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import com.carto.components.Options
 import com.carto.core.MapPos
 import com.carto.core.MapRange
@@ -100,21 +101,23 @@ object BaseMap : MapViewModel() {
         val layerArr = mutableListOf(explodedViewLayer, groupLayer, floorUpLayer, addLineLayer, addHoLayer)
         setLayer(layerArr)
 
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(Dispatchers.Main).launch {
 
-            val job: Deferred<Boolean> = async(Dispatchers.IO) {
+            val job: Deferred<Boolean> = async(Dispatchers.Main) {
                 val result = MapLayer.explodedView(activity, explodedViewSource, createPolygonArr)
                 result
             }
 
             val getResult = job.await()
 
-            runCatching {
-                if(!getResult) throw BaseException("전개도 레이어 생성 실패")
-            }.fold(
-                onSuccess = { activity.vm.showLoadingBar(false) },
-                onFailure = { LogUtil.e(it.message.toString()) }
-            )
+            activity.runOnUiThread {
+                runCatching {
+                    if(!getResult) throw BaseException("전개도 레이어 생성 실패")
+                }.fold(
+                    onSuccess = { activity.vm.showLoadingBar(false) },
+                    onFailure = { LogUtil.e(it.message.toString()) }
+                )
+            }
 
         }
 

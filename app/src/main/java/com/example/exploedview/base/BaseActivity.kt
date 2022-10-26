@@ -1,5 +1,7 @@
 package com.example.exploedview.base
 
+import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -7,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import com.example.exploedview.extension.repeatOnStarted
@@ -70,6 +73,24 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
 
     private fun handleEvent(event: BaseViewModel.Event) = when (event) {
 
+        is BaseViewModel.Event.SetTheme -> {
+
+            // event.theme에 따라 테마 다르게 변경
+            when (event.theme) {
+                "light" -> {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                }
+                "dark" -> {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                }
+                else -> {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                }
+            }
+
+            LogUtil.i("theme => ${event.theme}")
+        }
+
         is BaseViewModel.Event.showLog -> {
 //            when(event.type){
 //                "d" ->  LogUtil.d(event.tag, event.text)
@@ -88,7 +109,7 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
 
             initWidgetUI()
 
-            pb?.visibility = when(bool){
+            pb?.visibility = when (bool) {
                 true -> View.VISIBLE
                 false -> View.GONE
             }
@@ -183,8 +204,26 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
 
         }
 
-        if(sb == null) sb = Snackbar.make(binding.root, "", Snackbar.LENGTH_SHORT)
+        if (sb == null) sb = Snackbar.make(binding.root, "", Snackbar.LENGTH_SHORT)
 
+    }
+
+    open fun isNightModeActive(context: Context): Boolean {
+        val defaultNightMode = AppCompatDelegate.getDefaultNightMode()
+        if (defaultNightMode == AppCompatDelegate.MODE_NIGHT_YES) {
+            return true
+        }
+        if (defaultNightMode == AppCompatDelegate.MODE_NIGHT_NO) {
+            return false
+        }
+        val currentNightMode: Int = (context.resources.configuration.uiMode
+                and Configuration.UI_MODE_NIGHT_MASK)
+        when (currentNightMode) {
+            Configuration.UI_MODE_NIGHT_NO -> return false
+            Configuration.UI_MODE_NIGHT_YES -> return true
+            Configuration.UI_MODE_NIGHT_UNDEFINED -> return false
+        }
+        return false
     }
 
 }

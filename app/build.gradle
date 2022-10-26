@@ -34,12 +34,6 @@ android {
     }
 }
 
-/**
- * The dependencies block in the module-level build configuration file
- * specifies dependencies required to build only the module itself.
- * To learn more, go to Add build dependencies.
- */
-
 dependencies {
 
     implementation fileTree(include: ['*.jar, *.aar'], dir: 'libs')

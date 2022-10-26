@@ -11,6 +11,7 @@ open class BaseViewModel : ViewModel() {
     private val _eventFlow = MutableSharedFlow<Event>()
     val eventFlow = _eventFlow.asSharedFlow()
 
+    fun setTheme(theme: String) = event(Event.SetTheme(theme))
     fun showLoadingBar(bool: Boolean) = event(Event.ShowLoadingBar(bool))
     fun showSnackbar(stringResourceId: Int) = event(Event.ShowSnackBar(stringResourceId))
     fun showSnackbarString(str: String) = event(Event.ShowSnackbarString(str))
@@ -27,6 +28,7 @@ open class BaseViewModel : ViewModel() {
     }
 
     sealed class Event {
+        data class SetTheme(val theme: String) : Event()
         data class ShowSnackBar(val text: Int) : Event()
         data class ShowSnackbarString(val text: String) : Event()
         data class ShowToast(val text: Int) : Event()

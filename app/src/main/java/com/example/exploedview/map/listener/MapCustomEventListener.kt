@@ -96,7 +96,7 @@ class MapCustomEventListener(
 //                ClickType.CLICK_TYPE_LONG -> i("Long map click!")
 //                ClickType.CLICK_TYPE_DOUBLE -> i("Double map click!")
 //                ClickType.CLICK_TYPE_DUAL -> i("Dual map click!")
-                else -> throw Exception("유효하지 않는 이벤트 발생")
+                else -> BaseMap.activity.vm.showSnackbarString("유효하지 않는 이벤트 발생")
             }
 
             if (_popup != null) {
@@ -104,7 +104,7 @@ class MapCustomEventListener(
                 _popup = null
             }
 
-            mapClickInfo.clickPos
+            mapClickInfo?.clickPos
             val popupStyle = MapStyle.setBalloonPopupStyle(10)
             val clickPosCnt: Int? = _posArr?.size
             val clickPosCntTxt = "포인트의 개수 : $clickPosCnt"

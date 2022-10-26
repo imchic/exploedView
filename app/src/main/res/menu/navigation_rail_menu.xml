@@ -2,29 +2,25 @@
 <menu xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android"
     tools:ignore="MenuTitle">
+
   <item
-      android:id="@+id/addFloor"
-      android:enabled="true"
-      android:title="층 추가"
-      android:icon="@drawable/ic_baseline_home_24" />
+          android:id="@+id/addFloor"
+          android:title="층 추가"
+          android:icon="@drawable/ic_baseline_home_24" />
   <item
       android:id="@+id/addLine"
-      android:enabled="true"
       android:title="라인 추가"
       android:icon="@drawable/ic_baseline_add_circle_24" />
   <item
       android:id="@+id/addHo"
-      android:enabled="true"
       android:title="호 추가"
       android:icon="@drawable/ic_baseline_apartment_24" />
   <item
       android:id="@+id/reset"
-      android:enabled="true"
       android:title="초기화"
       android:icon="@drawable/ic_baseline_delete_24" />
   <item
       android:id="@+id/contains"
-      android:enabled="true"
       android:title="그룹영역"
       android:icon="@drawable/ic_baseline_add_to_photos_24" />
 </menu>

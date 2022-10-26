@@ -1,5 +1,7 @@
 package com.example.exploedview
 
+import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatDelegate
 import com.example.exploedview.base.BaseActivity
 import com.example.exploedview.base.BaseException
 import com.example.exploedview.databinding.ActivityMapBinding
@@ -9,7 +11,6 @@ import com.example.exploedview.map.MapLayer
 import com.example.exploedview.map.MapViewModel
 import com.example.exploedview.util.LogUtil
 import kotlinx.coroutines.*
-import okhttp3.internal.wait
 
 class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
 
@@ -22,7 +23,6 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
 
     override fun initDataBinding() {
         CoroutineScope(Dispatchers.Main).launch {
-            vm.showLoadingBar(true)
             repeatOnStarted {
                 vm.mapEventFlow.collect { event -> handleMapEvent(event) }
             }
@@ -35,6 +35,17 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
         binding.run {
 
             context.run {
+
+                // 시스템 테마에 따라 테마 다르게 보여주기
+                switchTheme.setOnCheckedChangeListener { _, isChecked ->
+                    if(isChecked) {
+                        vm.setTheme("dark")
+                        binding.tvTheme.text = "dark"
+                    } else {
+                        vm.setTheme("light")
+                        binding.tvTheme.text = "light"
+                    }
+                }
 
                 navigationRail.run {
                     val badge1 = getOrCreateBadge(R.id.addFloor)
@@ -143,11 +154,13 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
                 }
 
                 is MapViewModel.MapEvent.SetBaseMap -> {
-                    runCatching { if (!mapEvent.flag) throw BaseException("BaseMap 생성 실패") }
-                        .fold(
-                            onSuccess = { BaseMap.initBaseMap(binding.cartoMapView, context, baseContext) },
-                            onFailure = { LogUtil.e(it.toString()) }
-                        )
+                    runOnUiThread {
+                        runCatching { if (!mapEvent.flag) throw BaseException("BaseMap 생성 실패") }
+                            .fold(
+                                onSuccess = { BaseMap.initBaseMap(binding.cartoMapView, context, baseContext) },
+                                onFailure = { LogUtil.e(it.toString()); vm.showSnackbarString(it.toString()) }
+                            )
+                    }
                 }
 
                 is MapViewModel.MapEvent.ClearMap -> {
@@ -155,7 +168,7 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
                     runCatching { if (!mapEvent.flag) throw BaseException("BaseMap Object 초기화 실패") }
                         .fold(
                             onSuccess = { BaseMap.clear() },
-                            onFailure = { LogUtil.e(it.toString()) }
+                            onFailure = { LogUtil.e(it.toString()); vm.showSnackbarString(it.toString()) }
                         )
                 }
 

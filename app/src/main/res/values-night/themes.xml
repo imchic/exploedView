@@ -1,6 +1,10 @@
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.ExploedView" parent="Theme.Material3.Dark.NoActionBar">
+
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+
         <item name="colorPrimary">@color/md_theme_dark_primary</item>
         <item name="colorOnPrimary">@color/md_theme_dark_onPrimary</item>
         <item name="colorPrimaryContainer">@color/md_theme_dark_primaryContainer</item>
@@ -27,5 +31,13 @@
         <item name="colorOnSurfaceInverse">@color/md_theme_dark_inverseOnSurface</item>
         <item name="colorSurfaceInverse">@color/md_theme_dark_inverseSurface</item>
         <item name="colorPrimaryInverse">@color/md_theme_dark_inversePrimary</item>
+
+        <item name="android:statusBarColor" >?attr/colorPrimaryVariant</item>
+
+        <!-- Dialogs -->
+        <item name="toolbarStyle">@style/Widget.Toolbar</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.MaterialAlertDialog</item>
+
     </style>
+
 </resources>
