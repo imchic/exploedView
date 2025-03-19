@@ -1,7 +1,6 @@
 package com.example.exploedview
 
-import android.content.res.Configuration
-import androidx.appcompat.app.AppCompatDelegate
+import android.content.Intent
 import com.example.exploedview.base.BaseActivity
 import com.example.exploedview.base.BaseException
 import com.example.exploedview.databinding.ActivityMapBinding
@@ -10,7 +9,9 @@ import com.example.exploedview.map.BaseMap
 import com.example.exploedview.map.MapLayer
 import com.example.exploedview.map.MapViewModel
 import com.example.exploedview.util.LogUtil
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
 
@@ -24,9 +25,64 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
     override fun initDataBinding() {
         CoroutineScope(Dispatchers.Main).launch {
             repeatOnStarted {
+
+//                binding.toolbar.title = "Exploded View"
+//                // 뒤로가기
+//                binding.toolbar.setNavigationOnClickListener { finish() }
+
+                binding.toolbar.run {
+                    title = "NEO-SmartBlueprint"
+                    setNavigationIcon(R.drawable.ic_baseline_arrow_back_24)
+                    setNavigationOnClickListener {
+                        // 이전 단계
+                        startActivity(Intent(this@MapActivity, NaverMapActivity::class.java))
+                        finish()
+                    }
+                }
+
                 vm.mapEventFlow.collect { event -> handleMapEvent(event) }
             }
             vm.setBaseMap(true)
+
+//            binding.naverMapView.getMapAsync { naverMap ->
+//                naverMap.addOnCameraChangeListener { _, _ ->
+//                    vm.getCoordinates(naverMap.cameraPosition.target.toString())
+//                }
+//                // 네이버 맵 최초위치 지정
+//                naverMap.cameraPosition = CameraPosition(
+//                    LatLng(35.15664464076588, 129.14510989614843),
+//                    18.0
+//                )
+//
+//                naverMap.setOnMapClickListener { point, coord ->
+//                    LogUtil.d("onMapClick: point=$point, coord=$coord")
+//                }
+//
+//                val marker = Marker()
+//                marker.position = LatLng(35.15664464076588, 129.14510989614843)
+//
+//                marker.map = naverMap
+//                val infoWindow = InfoWindow()
+//
+//                infoWindow.adapter = object : InfoWindow.DefaultTextAdapter(context) {
+//                    override fun getText(infoWindow: InfoWindow): CharSequence {
+//                        return "해운대두산위브"
+//                    }
+//                }
+//
+//                infoWindow.open(marker)
+//
+//                infoWindow.setOnClickListener {
+//                    LogUtil.d("infoWindow clicked")
+//                    binding.naverMapView.visibility = View.GONE
+//                    binding.cartoMapView.visibility = View.VISIBLE
+//                    binding.navigationRail.visibility = View.VISIBLE
+//                    binding.constraintLayout2.visibility = View.VISIBLE
+//                    true
+//                }
+//
+//
+//            }
         }
     }
 
@@ -38,7 +94,7 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
 
                 // 시스템 테마에 따라 테마 다르게 보여주기
                 switchTheme.setOnCheckedChangeListener { _, isChecked ->
-                    if(isChecked) {
+                    if (isChecked) {
                         vm.setTheme("dark")
                         binding.tvTheme.text = "dark"
                     } else {
@@ -63,13 +119,19 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
                     navigationRail.setOnItemSelectedListener { menuItem ->
                         when (menuItem.itemId) {
                             R.id.addFloor -> {
-                                MapLayer.addFloor(BaseMap.addFloorDataSource, BaseMap.createPolygonArr)
+                                MapLayer.addFloor(
+                                    BaseMap.addFloorDataSource,
+                                    BaseMap.createPolygonArr
+                                )
                                 vm.getAddFloorValue(BaseMap.getPolygonElementCnt(BaseMap.addFloorDataSource))
                                 true
                             }
 
                             R.id.addLine -> {
-                                MapLayer.addLine(BaseMap.addLineDataSource, BaseMap.createPolygonArr)
+                                MapLayer.addLine(
+                                    BaseMap.addLineDataSource,
+                                    BaseMap.createPolygonArr
+                                )
                                 vm.getAddLIneValue(BaseMap.getPolygonElementCnt(BaseMap.addLineDataSource))
                                 true
                             }
@@ -86,7 +148,10 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
                             }
 
                             R.id.contains -> {
-                                BaseMap.contains(BaseMap.createPolygonArr, BaseMap.containsPolygonArr)
+                                BaseMap.contains(
+                                    BaseMap.createPolygonArr,
+                                    BaseMap.containsPolygonArr
+                                )
                                 vm.getContains(BaseMap.containsPolygonArr.size)
                                 true
                             }
@@ -157,7 +222,13 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
                     runOnUiThread {
                         runCatching { if (!mapEvent.flag) throw BaseException("BaseMap 생성 실패") }
                             .fold(
-                                onSuccess = { BaseMap.initBaseMap(binding.cartoMapView, context, baseContext) },
+                                onSuccess = {
+                                    BaseMap.initBaseMap(
+                                        binding.cartoMapView,
+                                        context,
+                                        baseContext
+                                    )
+                                },
                                 onFailure = { LogUtil.e(it.toString()); vm.showSnackbarString(it.toString()) }
                             )
                     }
@@ -167,7 +238,7 @@ class MapActivity : BaseActivity<ActivityMapBinding, MapViewModel>() {
                     vm.showLoadingBar(true)
                     runCatching { if (!mapEvent.flag) throw BaseException("BaseMap Object 초기화 실패") }
                         .fold(
-                            onSuccess = { BaseMap.clear() },
+                            onSuccess = { BaseMap.clear(); },
                             onFailure = { LogUtil.e(it.toString()); vm.showSnackbarString(it.toString()) }
                         )
                 }

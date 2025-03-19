@@ -31,13 +31,19 @@ object MapLayer {
     private var lineElement: VectorElementVector = VectorElementVector()
     private var hoElement: VectorElementVector = VectorElementVector()
 
+    var featureCount = 0
+
     /**
      * 공동주택 전개도 레이어
      * @param context Context
      * @param source LocalVectorDataSource?
      * @param polygonArr MutableList<Polygon>
      */
-    fun explodedView(context: Activity, source: LocalVectorDataSource?, polygonArr: MutableList<Polygon>): Boolean {
+    fun explodedView(
+        context: Activity,
+        source: LocalVectorDataSource?,
+        polygonArr: MutableList<Polygon>,
+    ): Boolean {
 
         var flag: Boolean
 
@@ -52,6 +58,8 @@ object MapLayer {
 
                 val total = features.featureCount
                 (context as MapActivity).binding.txtTotal.text = total.toString()
+
+                featureCount = total
 
                 for (i in 0 until total) {
 
@@ -79,7 +87,11 @@ object MapLayer {
                         )
 
                         createPolygon.run {
-                            BaseMap.setPropertiesStringValue(properties, MapConst.PROPERTIES_VALUE_ARR, this)
+                            BaseMap.setPropertiesStringValue(
+                                properties,
+                                MapConst.PROPERTIES_VALUE_ARR,
+                                this
+                            )
                             setMetaDataElement("SELECT", Variant("n"))
                             setMetaDataElement("CUSTOM_INDEX", Variant(i.toString()))
 
@@ -88,8 +100,14 @@ object MapLayer {
                         }
                         val minusNum = 2
 
-                        val centerPos = MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y)
-                        val middlePos = MapPos(createPolygon.geometry.centerPos.x, createPolygon.geometry.centerPos.y - minusNum)
+                        val centerPos = MapPos(
+                            createPolygon.geometry.centerPos.x,
+                            createPolygon.geometry.centerPos.y
+                        )
+                        val middlePos = MapPos(
+                            createPolygon.geometry.centerPos.x,
+                            createPolygon.geometry.centerPos.y - minusNum
+                        )
 
                         elements.add(
                             Text(
@@ -248,7 +266,7 @@ object MapLayer {
         }.onSuccess {
             when {
                 it == 0 -> BaseMap.activity.vm.showSnackbarString("선택된 호실이 없습니다.")
-                it > 1  -> BaseMap.activity.vm.showSnackbarString("하나의 호실만 선택해주세요.")
+                it > 1 -> BaseMap.activity.vm.showSnackbarString("하나의 호실만 선택해주세요.")
 
                 else -> {
                     val target = BaseMap.selectPolygonArr[0]
@@ -261,18 +279,24 @@ object MapLayer {
                     target.apply {
                         when (pos) {
                             0 -> {
-                                south = MapPos(bounds.min.x - MapConst.INCREASE_LINE_NUM, bounds.min.y)
-                                west = MapPos(bounds.max.x - MapConst.INCREASE_LINE_NUM, bounds.min.y)
+                                south =
+                                    MapPos(bounds.min.x - MapConst.INCREASE_LINE_NUM, bounds.min.y)
+                                west =
+                                    MapPos(bounds.max.x - MapConst.INCREASE_LINE_NUM, bounds.min.y)
 
-                                north = MapPos(bounds.max.x - MapConst.INCREASE_LINE_NUM, bounds.max.y)
-                                east = MapPos(bounds.min.x - MapConst.INCREASE_LINE_NUM, bounds.max.y)
+                                north =
+                                    MapPos(bounds.max.x - MapConst.INCREASE_LINE_NUM, bounds.max.y)
+                                east =
+                                    MapPos(bounds.min.x - MapConst.INCREASE_LINE_NUM, bounds.max.y)
                             }
 
                             1 -> {
                                 south = MapPos(bounds.max.x, bounds.min.y)
-                                west = MapPos(bounds.max.x + MapConst.INCREASE_LINE_NUM, bounds.min.y)
+                                west =
+                                    MapPos(bounds.max.x + MapConst.INCREASE_LINE_NUM, bounds.min.y)
 
-                                north = MapPos(bounds.max.x + MapConst.INCREASE_LINE_NUM, bounds.max.y)
+                                north =
+                                    MapPos(bounds.max.x + MapConst.INCREASE_LINE_NUM, bounds.max.y)
                                 east = MapPos(bounds.max.x, bounds.max.y)
                             }
 
@@ -280,16 +304,22 @@ object MapLayer {
                                 south = MapPos(bounds.min.x, bounds.max.y)
                                 west = MapPos(bounds.max.x, bounds.max.y)
 
-                                north = MapPos(bounds.max.x, bounds.max.y + MapConst.INCREASE_FLOOR_NUM)
-                                east = MapPos(bounds.min.x, bounds.max.y + MapConst.INCREASE_FLOOR_NUM)
+                                north =
+                                    MapPos(bounds.max.x, bounds.max.y + MapConst.INCREASE_FLOOR_NUM)
+                                east =
+                                    MapPos(bounds.min.x, bounds.max.y + MapConst.INCREASE_FLOOR_NUM)
                             }
 
                             3 -> {
-                                south = MapPos(bounds.min.x, bounds.min.y - MapConst.INCREASE_FLOOR_NUM)
-                                west = MapPos(bounds.max.x, bounds.min.y - MapConst.INCREASE_FLOOR_NUM)
+                                south =
+                                    MapPos(bounds.min.x, bounds.min.y - MapConst.INCREASE_FLOOR_NUM)
+                                west =
+                                    MapPos(bounds.max.x, bounds.min.y - MapConst.INCREASE_FLOOR_NUM)
 
-                                north = MapPos(bounds.max.x, bounds.max.y - MapConst.INCREASE_FLOOR_NUM)
-                                east = MapPos(bounds.min.x, bounds.max.y - MapConst.INCREASE_FLOOR_NUM)
+                                north =
+                                    MapPos(bounds.max.x, bounds.max.y - MapConst.INCREASE_FLOOR_NUM)
+                                east =
+                                    MapPos(bounds.min.x, bounds.max.y - MapConst.INCREASE_FLOOR_NUM)
                             }
                         }
                     }
@@ -312,7 +342,8 @@ object MapLayer {
             }
         }.onFailure {
             LogUtil.e(it.toString())
-        }.recover { error -> {
+        }.recover { error ->
+            {
                 LogUtil.e(error.message.toString())
             }
         }
@@ -394,16 +425,16 @@ object MapLayer {
         return try {
             baseMap.clickPosArr.clear()
 
-            baseMap.containsDataSource?.clear()
-            baseMap.addFloorDataSource?.clear()
-            baseMap.addLineDataSource?.clear()
-            baseMap.addHoDataSource?.clear()
+            baseMap.containsDataSource.clear()
+            baseMap.addFloorDataSource.clear()
+            baseMap.addLineDataSource.clear()
+            baseMap.addHoDataSource.clear()
 
             floorElement.clear()
             lineElement.clear()
             hoElement.clear()
 
-            baseMap.explodedViewSource?.clear()
+            baseMap.explodedViewSource.clear()
             explodedView(baseMap.activity, baseMap.explodedViewSource, baseMap.createPolygonArr)
 
             baseMap.selectPolygonArr.clear()
@@ -415,10 +446,10 @@ object MapLayer {
                 getSelectExplodedPolygon(baseMap.selectPolygonArr.size)
                 getGroupExplodedPolygon(baseMap.containsPolygonArr.size)
                 getCoordinates("0,0")
-                getAddFloorValue(baseMap.addFloorDataSource?.all!!.size().toInt())
-                getAddLIneValue(baseMap.addLineDataSource?.all!!.size().toInt())
-                getAddHo(baseMap.addHoDataSource?.all!!.size().toInt())
-                getContains(baseMap.containsDataSource?.all!!.size().toInt())
+                getAddFloorValue(baseMap.addFloorDataSource.all!!.size().toInt())
+                getAddLIneValue(baseMap.addLineDataSource.all!!.size().toInt())
+                getAddHo(baseMap.addHoDataSource.all!!.size().toInt())
+                getContains(baseMap.containsDataSource.all!!.size().toInt())
             }
 
             true

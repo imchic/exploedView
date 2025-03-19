@@ -63,7 +63,8 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
         binding.lifecycleOwner = this@BaseActivity
 
         repeatOnStarted {
-            vm.eventFlow.collect { event -> handleEvent(event) }
+//            vm.eventFlow.collect { event -> handleEvent(event) }
+            vm.liveData.observe(this@BaseActivity) { event -> handleEvent(event) }
         }
 
         initViewStart()
@@ -78,13 +79,15 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
             // event.theme에 따라 테마 다르게 변경
             when (event.theme) {
                 "light" -> {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                    delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_NO
                 }
+
                 "dark" -> {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                    delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_YES
                 }
+
                 else -> {
-                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                    delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
                 }
             }
 
@@ -105,7 +108,7 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
         is BaseViewModel.Event.ShowLoadingBar -> {
 
             val bool = event.isShow
-            LogUtil.w("LoadingBar Status => $bool")
+            LogUtil.i("LoadingBar Status => $bool")
 
             initWidgetUI()
 
@@ -120,6 +123,7 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
             sb?.run {
                 setText(event.text)
                 animationMode = ANIMATION_MODE_SLIDE
+                duration = Snackbar.LENGTH_SHORT
                 show()
             }
         }
@@ -128,6 +132,7 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
             sb?.run {
                 setText(event.text)
                 animationMode = ANIMATION_MODE_SLIDE
+                duration = Snackbar.LENGTH_SHORT
                 show()
             }
         }

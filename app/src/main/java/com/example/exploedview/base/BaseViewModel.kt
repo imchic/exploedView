@@ -1,5 +1,7 @@
 package com.example.exploedview.base
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -10,6 +12,9 @@ open class BaseViewModel : ViewModel() {
 
     private val _eventFlow = MutableSharedFlow<Event>()
     val eventFlow = _eventFlow.asSharedFlow()
+
+    private val _liveData = MutableLiveData<Event>()
+    val liveData: LiveData<Event> = _liveData
 
     fun setTheme(theme: String) = event(Event.SetTheme(theme))
     fun showLoadingBar(bool: Boolean) = event(Event.ShowLoadingBar(bool))
@@ -23,7 +28,8 @@ open class BaseViewModel : ViewModel() {
 
     private fun event(event: Event) {
         viewModelScope.launch {
-            _eventFlow.emit(event)
+//            _eventFlow.emit(event)
+            _liveData.value = event
         }
     }
 

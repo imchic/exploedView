@@ -5,6 +5,12 @@ pluginManagement {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        maven {  url 'https://repository.map.naver.com/archive/maven' }
+    }
+
+    plugins {
+        id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
+        id 'org.jetbrains.kotlin.android' version '2.0.20'
     }
 }
 dependencyResolutionManagement {
@@ -14,6 +20,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        maven {  url 'https://repository.map.naver.com/archive/maven' }
     }
 }
 rootProject.name = "exploedview"

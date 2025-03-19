@@ -3,13 +3,19 @@ package com.example.exploedview.map
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.content.res.Configuration
 import com.carto.components.Options
+import com.carto.components.RenderProjectionMode
 import com.carto.core.MapPos
 import com.carto.core.MapRange
 import com.carto.core.Variant
 import com.carto.datasources.LocalVectorDataSource
-import com.carto.geometry.*
+import com.carto.geometry.Feature
+import com.carto.geometry.FeatureBuilder
+import com.carto.geometry.FeatureCollection
+import com.carto.geometry.FeatureVector
+import com.carto.geometry.GeoJSONGeometryReader
+import com.carto.geometry.Geometry
+import com.carto.geometry.PolygonGeometry
 import com.carto.layers.EditableVectorLayer
 import com.carto.layers.Layer
 import com.carto.projections.Projection
@@ -17,11 +23,16 @@ import com.carto.ui.MapView
 import com.carto.vectorelements.Polygon
 import com.example.exploedview.MapActivity
 import com.example.exploedview.base.BaseException
+import com.example.exploedview.map.MapLayer.featureCount
 import com.example.exploedview.map.listener.MapCustomEventListener
 import com.example.exploedview.map.listener.VectorElementSelectEventListener
 import com.example.exploedview.util.LogUtil
 import com.example.exploedview.util.MapColor
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 @SuppressLint("StaticFieldLeak")
 
@@ -48,7 +59,11 @@ object BaseMap : MapViewModel() {
     lateinit var addHoDataSource: LocalVectorDataSource
 
     // layer
-    private val explodedViewLayer: EditableVectorLayer by lazy { EditableVectorLayer(explodedViewSource) }
+    private val explodedViewLayer: EditableVectorLayer by lazy {
+        EditableVectorLayer(
+            explodedViewSource
+        )
+    }
     private val groupLayer: EditableVectorLayer by lazy { EditableVectorLayer(containsDataSource) }
     private val floorUpLayer: EditableVectorLayer by lazy { EditableVectorLayer(addFloorDataSource) }
     private val addLineLayer: EditableVectorLayer by lazy { EditableVectorLayer(addLineDataSource) }
@@ -89,6 +104,12 @@ object BaseMap : MapViewModel() {
             isRotatable = false // 회전
             isZoomGestures = false
 //            backgroundBitmap = BitmapUtils.loadBitmapFromAssets("ci.png")
+            clearColor = MapColor.WHITE
+//            backgroundBitmap = null
+            zoomRange = MapRange(19f, 24.5f)
+            renderProjectionMode = RenderProjectionMode.RENDER_PROJECTION_MODE_PLANAR
+            tileThreadPoolSize = 2
+            watermarkScale = 0.0f
         }
         setInitZoomAndPos(18.toFloat(), MapPos(55.880251, 272.365759), 0.5F)
 
@@ -98,7 +119,8 @@ object BaseMap : MapViewModel() {
         addLineDataSource = LocalVectorDataSource(proj)
         addHoDataSource = LocalVectorDataSource(proj)
 
-        val layerArr = mutableListOf(explodedViewLayer, groupLayer, floorUpLayer, addLineLayer, addHoLayer)
+        val layerArr =
+            mutableListOf(explodedViewLayer, groupLayer, floorUpLayer, addLineLayer, addHoLayer)
         setLayer(layerArr)
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -112,7 +134,7 @@ object BaseMap : MapViewModel() {
 
             activity.runOnUiThread {
                 runCatching {
-                    if(!getResult) throw BaseException("전개도 레이어 생성 실패")
+                    if (!getResult) throw BaseException("전개도 레이어 생성 실패")
                 }.fold(
                     onSuccess = { activity.vm.showLoadingBar(false) },
                     onFailure = { LogUtil.e(it.message.toString()) }
@@ -122,7 +144,8 @@ object BaseMap : MapViewModel() {
         }
 
 
-        this.mapView.mapEventListener = MapCustomEventListener(this.mapView, containsDataSource, clickPosArr)
+        this.mapView.mapEventListener =
+            MapCustomEventListener(this.mapView, containsDataSource, clickPosArr)
     }
 
     /**
@@ -224,7 +247,8 @@ object BaseMap : MapViewModel() {
      * @param key String
      * @param name Variant
      */
-    private fun setLayerName(layer: Layer?, key: String, name: Variant) = layer?.setMetaDataElement(key, name)
+    private fun setLayerName(layer: Layer?, key: String, name: Variant) =
+        layer?.setMetaDataElement(key, name)
 
     /**
      * 레이어 명 가져오기
@@ -232,7 +256,8 @@ object BaseMap : MapViewModel() {
      * @param key String
      * @return String?
      */
-    fun getLayerName(index: Int, key: String): String = mapView.layers.get(index).getMetaDataElement(key).string
+    fun getLayerName(index: Int, key: String): String =
+        mapView.layers.get(index).getMetaDataElement(key).string
 
     /**
      * 레이어의 갯수
@@ -245,20 +270,29 @@ object BaseMap : MapViewModel() {
      */
     fun clear() {
 
-        CoroutineScope(Dispatchers.Default).launch {
-
-            val job: Deferred<Boolean> = async(Dispatchers.IO) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val job: Deferred<Boolean> = async(Dispatchers.Main) {
                 val result = MapLayer.clearLayer(BaseMap, mapView)
                 result
             }
 
-            val resultJob = job.await()
+            val getResult = job.await()
 
-            if(resultJob) {
-                activity.vm.showLoadingBar(false)
-                activity.vm.showSnackbarString("초기화")
+            activity.runOnUiThread {
+                runCatching {
+                    if (!getResult) throw BaseException("전개도 레이어 생성 실패")
+                }.fold(
+                    onSuccess = {
+                        activity.vm.showLoadingBar(false); activity.vm.showSnackbarString(
+                        "초기화"
+                    )
+                    },
+                    onFailure = { LogUtil.e(it.message.toString()) }
+                )
             }
+
         }
+
 
     }
 
@@ -315,14 +349,21 @@ object BaseMap : MapViewModel() {
         }.onFailure {
             LogUtil.e(it.toString())
         }.also {
-            val geoJSONGeometryWriter = GeoJSONGeometryWriter()
+//            val geoJSONGeometryWriter = GeoJSONGeometryWriter()
 
-            LogUtil.i("NEW_YN => ${newFeature.properties.getObjectElement("new_yn").string}")
-            LogUtil.i("HO_NM =>  ${newFeature.properties.getObjectElement("HO_NM").string}")
-            LogUtil.i("GEOMETRY_BOUNDS => ${newFeature.geometry.bounds}")
-            LogUtil.i("FEATURE_COUNT => ${featureCollection?.featureCount}")
+//            LogUtil.i("NEW_YN => ${newFeature.properties.getObjectElement("new_yn").string}")
+//            LogUtil.i("HO_NM =>  ${newFeature.properties.getObjectElement("HO_NM").string}")
+//            LogUtil.i("GEOMETRY_BOUNDS => ${newFeature.geometry.bounds}")
+//            LogUtil.i("FEATURE_COUNT => ${featureCollection?.featureCount}")
 
-            LogUtil.i("FEATURE_COLLECTION => ${geoJSONGeometryWriter.writeFeatureCollection(featureCollection)}")
+//            LogUtil.i(
+//                "FEATURE_COLLECTION => ${
+//                    geoJSONGeometryWriter.writeFeatureCollection(
+//                        featureCollection
+//                    )
+//                }"
+//            )
+
         }
 
     }
@@ -337,16 +378,35 @@ object BaseMap : MapViewModel() {
             .map {
                 when (getPropertiesStringValue(it, "SELECT")) {
                     "n" -> {
+
+                        createPolygonArr.forEach { polygon ->
+                            polygon.style = MapStyle.setPolygonStyle(
+                                MapColor.TEAL,
+                                MapColor.TEAL,
+                                2F
+                            )
+                            polygon.setMetaDataElement("SELECT", Variant("n"))
+                        }
+
+                        // 선택은 한개만 적용
+                        selectPolygonArr.clear()
+
                         it.style = MapStyle.setPolygonStyle(
                             MapColor.RED,
                             MapColor.RED,
                             2F
                         )
-                        getPropertiesStringValueArr(it)
+
+                        if (activity.binding.switchRead.isChecked) {
+                            getPropertiesStringValueArr(it)
+                        }
 
                         it.setMetaDataElement("SELECT", Variant("y"))
+
                         selectPolygonArr.add(it)
+
                     }
+
                     "y" -> {
                         it.style = MapStyle.setPolygonStyle(
                             MapColor.TEAL,
@@ -356,6 +416,7 @@ object BaseMap : MapViewModel() {
                         it.setMetaDataElement("SELECT", Variant("n"))
                         selectPolygonArr.remove(it)
                     }
+
                     else -> throw BaseException("잘못된 SELECT EVENT 발생")
                 }
 
@@ -418,15 +479,23 @@ object BaseMap : MapViewModel() {
         }
 
         activity.runOnUiThread {
+//            val isLayerShowToggle = MapEvent.SetLayerReadStatus(activity.binding.switchRead.isChecked).status
+//
+//            runCatching {
+//                if (!isLayerShowToggle) throw BaseException("레이어 View 상태값 : False")
+//            }.fold(
+//                onSuccess = { activity.vm.showAlertDialog(arr) },
+//                onFailure = { LogUtil.e(it.toString()) }
+//            )
 
-            val isLayerShowToggle = MapEvent.SetLayerReadStatus(activity.binding.switchRead.isChecked).status
+            val isLayerShow = activity.binding.switchRead.isChecked
 
-            runCatching {
-                if (!isLayerShowToggle) throw BaseException("레이어 View 상태값 : False")
-            }.fold(
-                onSuccess = { activity.vm.showAlertDialog(arr) },
-                onFailure = { LogUtil.e(it.toString()) }
-            )
+            if (isLayerShow) {
+                activity.vm.showAlertDialog(arr)
+            } else {
+                LogUtil.e("레이어 View 상태값 : False")
+            }
+
         }
     }
 
@@ -437,6 +506,11 @@ object BaseMap : MapViewModel() {
                 is Polygon -> resultCnt++
             }
         }
+        LogUtil.i("source.all.size() => $resultCnt")
+
+        featureCount += resultCnt
+        activity.binding.txtTotal.text = featureCount.toString()
+
         return resultCnt
     }
 
