@@ -29,6 +29,7 @@ fun NeoTextField(
     isError: Boolean = false,
     isErrorText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
+    modifier: Modifier,
 ) {
 
     if (isError) {
@@ -38,7 +39,11 @@ fun NeoTextField(
                 isErrorText ?: "Error",
                 color = Color.Red,
                 fontSize = 14.sp,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = Color.Transparent
+                    )
             )
         }
     }

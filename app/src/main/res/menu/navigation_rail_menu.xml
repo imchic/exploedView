@@ -23,4 +23,8 @@
       android:id="@+id/contains"
       android:title="그룹영역"
       android:icon="@drawable/ic_baseline_add_to_photos_24" />
+  <item
+        android:id="@+id/save"
+        android:title="저장"
+        android:icon="@drawable/ic_baseline_save_as_24" />
 </menu>

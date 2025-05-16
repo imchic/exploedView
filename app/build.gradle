@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("kotlin-kapt")
 }
 
 android {
@@ -21,7 +22,7 @@ android {
         applicationId = "com.example.exploedview"
 
         // Defines the minimum API level required to run the app.
-        minSdk = 21
+        minSdk = 28
 
         // Specifies the API level used to test the app.
 
@@ -45,14 +46,28 @@ android {
         kotlinCompilerExtensionVersion '1.4.7'
     }
 
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            def buildType = variant.buildType.name
+            def version = defaultConfig.versionName
+            def flavor = variant.flavorName
+            def date = new Date().format("yyyyMMdd", TimeZone.getTimeZone("UTC"))
+            outputFileName = "Neobrix_smartBluePrint_${version}_${date}_${buildType}.apk"
+            //outputFileName = "kwater_ldm_${variant.name}.apk"
+        }
+    }
+
 }
 
 dependencies {
 
     implementation fileTree(include: ['*.jar, *.aar'], dir: 'libs')
 
+    implementation 'com.github.GrenderG:Toasty:1.5.2'
+
     // 네이버 지도 SDK
     implementation("com.naver.maps:map-sdk:3.20.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
 
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
@@ -87,6 +102,12 @@ dependencies {
 
     def coroutine_version = "1.6.4"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutine_version"
+
+    // room db
+    def room_version = "2.5.2" // 최신 버전 확인 필요
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version" // Java용
+    kapt "androidx.room:room-compiler:$room_version" // Kotlin용
 
     testImplementation 'junit:junit:'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

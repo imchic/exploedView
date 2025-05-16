@@ -1,0 +1,164 @@
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/bottom_sheet_marker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bottom_sheet_background"
+        android:padding="24dp"
+        android:paddingTop="16dp"
+        android:clipToPadding="false"
+        app:elevation="8dp">
+
+    <!-- 드래그 핸들 -->
+    <View
+            android:id="@+id/drag_handle"
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:background="@drawable/drag_handle_background"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="16dp" />
+
+    <!-- 제목 섹션 -->
+    <!--<ImageView
+            android:id="@+id/icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_home_marker"
+            app:tint="?attr/colorPrimary"
+            app:layout_constraintTop_toBottomOf="@id/drag_handle"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginEnd="12dp" />-->
+
+    <!-- Icon with circular background -->
+    <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_circle_icon"
+            android:layout_marginTop="20dp"
+            app:layout_constraintStart_toStartOf="parent"
+            android:id="@+id/frameLayout2"
+            app:layout_constraintTop_toBottomOf="@+id/drag_handle">
+
+        <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_home_marker"
+                app:tint="@android:color/white" />
+    </FrameLayout>
+
+    <TextView
+            android:id="@+id/marker_add_check"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="공동주택 정보"
+            android:textSize="22sp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/frameLayout2"
+            app:layout_constraintBottom_toBottomOf="@+id/frameLayout2"
+            app:layout_constraintTop_toTopOf="@+id/frameLayout2" />
+
+    <TextView
+            android:id="@+id/marker_add_location_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="주소:"
+            android:textSize="16sp"
+            android:textColor="?android:attr/textColorSecondary"
+            app:layout_constraintTop_toBottomOf="@id/marker_add_check"
+            android:layout_marginTop="24dp"
+            app:layout_constraintEnd_toEndOf="@+id/marker_add_location_subtitle"
+            app:layout_constraintStart_toStartOf="@+id/marker_add_location_subtitle" />
+
+    <!-- 위치 정보 -->
+    <TextView
+            android:id="@+id/marker_add_location"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="주소 value"
+            android:textSize="16sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginStart="8dp"
+            android:lineSpacingExtra="4dp"
+            android:lineSpacingMultiplier="1.4"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/marker_add_location_title"
+            app:layout_constraintBottom_toTopOf="@+id/marker_add_location_detail" />
+
+    <!-- 상세정보 -->
+    <TextView
+            android:id="@+id/marker_add_location_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="상세정보:"
+            android:textSize="16sp"
+            android:textColor="?android:attr/textColorSecondary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/marker_add_location_title" />
+
+    <TextView
+            android:id="@+id/marker_add_location_detail"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="상세정보 value"
+            android:textSize="16sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:lineSpacingExtra="4dp"
+            android:lineSpacingMultiplier="1.4"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/marker_add_location_subtitle"
+            app:layout_constraintStart_toStartOf="@+id/marker_add_location" />
+
+    <!-- 버튼 섹션 -->
+    <!--    <com.google.android.material.button.MaterialButton-->
+    <!--            android:id="@+id/marker_add_cancel_button"-->
+    <!--            style="?attr/materialButtonOutlinedStyle"-->
+    <!--            android:layout_width="wrap_content"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:text="취소"-->
+    <!--            android:textColor="?attr/colorPrimary"-->
+    <!--            android:icon="@drawable/ic_close"-->
+    <!--            android:iconTint="?attr/colorPrimary"-->
+    <!--            app:strokeWidth="0dp"-->
+    <!--            app:layout_constraintTop_toBottomOf="@id/marker_add_location_detail"-->
+    <!--            app:layout_constraintEnd_toStartOf="@id/marker_add_button"-->
+    <!--            android:layout_marginEnd="12dp"-->
+    <!--            android:layout_marginTop="16dp" />-->
+
+    <com.google.android.material.button.MaterialButton
+            android:id="@+id/marker_add_button"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="추가"
+            android:icon="@drawable/ic_add"
+            android:iconTint="@android:color/white"
+            android:backgroundTint="?attr/colorPrimary"
+            app:strokeWidth="0dp"
+            android:textColor="@android:color/white"
+            app:layout_constraintTop_toBottomOf="@id/marker_add_location_detail"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:drawableStart="@drawable/ic_add"
+            android:drawableTint="@android:color/white"
+            android:layout_marginTop="16dp" />
+
+    <!-- 전개도 화면 이동 버튼 -->
+    <com.google.android.material.button.MaterialButton
+            android:id="@+id/marker_move_button"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="전개도 화면 이동"
+            android:backgroundTint="@color/cobalt_blue"
+            app:strokeWidth="0dp"
+            android:textColor="@android:color/white"
+            android:layout_marginEnd="10dp"
+            app:layout_constraintEnd_toStartOf="@+id/marker_add_button"
+            app:layout_constraintTop_toTopOf="@+id/marker_add_button" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

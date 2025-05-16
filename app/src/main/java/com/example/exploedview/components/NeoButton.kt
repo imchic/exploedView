@@ -17,14 +17,15 @@ fun NeoButton(
     text: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
-    modifer: Modifier,
+    modifier: Modifier,
 ) {
     val gradientBrush = if (enabled) {
-        Brush.linearGradient(
-            colors = listOf(
-                Color(0xff5038ED), Color(0xff9181F4)
-            )
-        )
+//        Brush.linearGradient(
+//            colors = listOf(
+//                Color(0xff5038ED), Color(0xff9181F4)
+//            )
+//        )
+        Brush.horizontalGradient(listOf(Color(0xff5038ED), Color(0xff9181F4)))
     } else {
         Brush.horizontalGradient(listOf(Color.Gray, Color.Gray)) // 비활성화 상태
     }
@@ -38,7 +39,7 @@ fun NeoButton(
             disabledContentColor = Color.Gray,
             disabledContainerColor = Color.Transparent
         ),
-        modifier = modifer.background(brush = gradientBrush, shape = RoundedCornerShape(16.dp)),
+        modifier = modifier.background(brush = gradientBrush, shape = RoundedCornerShape(16.dp)),
     ) {
         Box {
             Text(

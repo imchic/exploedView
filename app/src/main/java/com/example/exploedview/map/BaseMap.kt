@@ -3,9 +3,14 @@ package com.example.exploedview.map
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import com.carto.components.Options
 import com.carto.components.RenderProjectionMode
 import com.carto.core.MapPos
+import com.carto.core.MapPosVector
 import com.carto.core.MapRange
 import com.carto.core.Variant
 import com.carto.datasources.LocalVectorDataSource
@@ -15,13 +20,17 @@ import com.carto.geometry.FeatureCollection
 import com.carto.geometry.FeatureVector
 import com.carto.geometry.GeoJSONGeometryReader
 import com.carto.geometry.Geometry
+import com.carto.geometry.PointGeometry
 import com.carto.geometry.PolygonGeometry
 import com.carto.layers.EditableVectorLayer
 import com.carto.layers.Layer
 import com.carto.projections.Projection
 import com.carto.ui.MapView
+import com.carto.utils.BitmapUtils
 import com.carto.vectorelements.Polygon
+import com.carto.vectorelements.VectorElementVector
 import com.example.exploedview.MapActivity
+import com.example.exploedview.R
 import com.example.exploedview.base.BaseException
 import com.example.exploedview.map.MapLayer.featureCount
 import com.example.exploedview.map.listener.MapCustomEventListener
@@ -33,6 +42,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import java.io.File
 
 @SuppressLint("StaticFieldLeak")
 
@@ -59,11 +69,12 @@ object BaseMap : MapViewModel() {
     lateinit var addHoDataSource: LocalVectorDataSource
 
     // layer
-    private val explodedViewLayer: EditableVectorLayer by lazy {
+    val explodedViewLayer: EditableVectorLayer by lazy {
         EditableVectorLayer(
             explodedViewSource
         )
     }
+
     private val groupLayer: EditableVectorLayer by lazy { EditableVectorLayer(containsDataSource) }
     private val floorUpLayer: EditableVectorLayer by lazy { EditableVectorLayer(addFloorDataSource) }
     private val addLineLayer: EditableVectorLayer by lazy { EditableVectorLayer(addLineDataSource) }
@@ -73,7 +84,6 @@ object BaseMap : MapViewModel() {
     var createPolygonArr = mutableListOf<Polygon>()
     var containsPolygonArr = mutableListOf<Polygon>()
     var selectPolygonArr = mutableListOf<Polygon>()
-
     var clickPosArr = mutableListOf<MapPos>()
 
     // listener
@@ -89,7 +99,7 @@ object BaseMap : MapViewModel() {
      * @param activity Activity
      * @param context Context
      */
-    fun initBaseMap(mapView: MapView, activity: Activity, context: Context) {
+    fun initBaseMap(complexPk: String?, mapView: MapView, activity: Activity, context: Context) {
 
         this.context = context
         this.activity = activity as MapActivity
@@ -103,9 +113,8 @@ object BaseMap : MapViewModel() {
             tiltRange = MapRange(90f, 90f) // 틸트 고정
             isRotatable = false // 회전
             isZoomGestures = false
-//            backgroundBitmap = BitmapUtils.loadBitmapFromAssets("ci.png")
+            backgroundBitmap = BitmapUtils.loadBitmapFromAssets("map_innobrick.png")
             clearColor = MapColor.WHITE
-//            backgroundBitmap = null
             zoomRange = MapRange(19f, 24.5f)
             renderProjectionMode = RenderProjectionMode.RENDER_PROJECTION_MODE_PLANAR
             tileThreadPoolSize = 2
@@ -126,7 +135,8 @@ object BaseMap : MapViewModel() {
         CoroutineScope(Dispatchers.Main).launch {
 
             val job: Deferred<Boolean> = async(Dispatchers.Main) {
-                val result = MapLayer.explodedView(activity, explodedViewSource, createPolygonArr)
+                val result =
+                    MapLayer.explodedView(activity, complexPk, explodedViewSource, createPolygonArr)
                 result
             }
 
@@ -137,7 +147,221 @@ object BaseMap : MapViewModel() {
                     if (!getResult) throw BaseException("전개도 레이어 생성 실패")
                 }.fold(
                     onSuccess = { activity.vm.showLoadingBar(false) },
-                    onFailure = { LogUtil.e(it.message.toString()) }
+                    onFailure = {
+                        LogUtil.e(it.message.toString())
+
+                        // 신규 추가
+                        val layoutInflater = activity.layoutInflater
+                        val dialogView = layoutInflater.inflate(R.layout.custom_alert_dialog, null)
+                        val dialog = AlertDialog.Builder(activity)
+                            .setView(dialogView)
+                            .setCancelable(true)
+                            .show()
+
+                        val tvTitle = dialogView.findViewById<TextView>(R.id.dialog_title)
+                        val tvMessage = dialogView.findViewById<TextView>(R.id.dialog_message)
+                        val btnCancel = dialogView.findViewById<Button>(R.id.dialog_cancel_button)
+                        val btnConfirm = dialogView.findViewById<Button>(R.id.dialog_confirm_button)
+
+                        tvTitle.text = "전개도 레이어 생성 실패"
+
+                        // 신규 전개도 추가
+                        tvMessage.text = "선택하신 공동주택은 전개도가 존재하지 않습니다.\n" +
+                                "신규 전개도를 추가 하시겠습니까?"
+
+                        btnCancel.text = "취소"
+                        btnCancel.setOnClickListener {
+                            dialog.dismiss()
+                            // 뒤로 가기
+                            activity.onBackPressed()
+                        }
+
+                        btnConfirm.text = "확인"
+                        btnConfirm.setOnClickListener {
+
+                            val layoutInflater = activity.layoutInflater
+                            val dialogView =
+                                layoutInflater.inflate(R.layout.layout_new_map_edit, null)
+
+                            val editDialog = AlertDialog.Builder(activity)
+                                .setView(dialogView)
+                                .setCancelable(true)
+                                .show()
+
+                            val editTextFloor =
+                                dialogView.findViewById<EditText>(R.id.edit_text_floor) // 층수
+
+                            val editTextLine =
+                                dialogView.findViewById<EditText>(R.id.edit_text_line) // 호수
+
+                            val btnNewMapCancel =
+                                dialogView.findViewById<Button>(R.id.dialog_cancel_button) // 취소
+
+                            val btnNewMapConfirm =
+                                dialogView.findViewById<Button>(R.id.dialog_confirm_button) // 확인
+
+                            btnNewMapCancel.text = "취소"
+                            btnNewMapCancel.setOnClickListener {
+                                // 닫기
+                                editDialog.dismiss()
+                            }
+
+                            btnNewMapConfirm.text = "확인"
+                            btnNewMapConfirm.setOnClickListener {
+
+                                val floor = editTextFloor.text.toString()
+                                val line = editTextLine.text.toString()
+
+                                if (floor.isEmpty() || line.isEmpty()) {
+                                    activity.vm.showErrorMsg("층수와 호수를 입력해주세요.")
+                                } else {
+
+                                    dialog.dismiss()
+
+                                    // 신규
+                                    val floorNum = floor.toInt()
+                                    val lineNum = line.toInt()
+
+                                    // 현재 맵 가운데 좌표
+                                    val centerPos = mapView.focusPos!!
+
+                                    var polygon: PolygonGeometry
+                                    var newFloorPolygon: Polygon
+                                    var newLinePolygon: Polygon?
+
+                                    val newElemetns = VectorElementVector()
+
+                                    // 층수
+                                    for (i in 0 until floorNum) {
+
+                                        val addFloor = i * MapConst.INCREASE_FLOOR_NUM
+
+                                        val vertex1 = PointGeometry(
+                                            MapPos(
+                                                centerPos.x,
+                                                centerPos.y + addFloor
+                                            )
+                                        ) // 0,0
+                                        val vertex2 = PointGeometry(
+                                            MapPos(
+                                                centerPos.x,
+                                                centerPos.y + addFloor + MapConst.INCREASE_FLOOR_NUM
+                                            )
+                                        ) // 0,1
+                                        val vertex3 = PointGeometry(
+                                            MapPos(
+                                                centerPos.x + MapConst.INCREASE_LINE_NUM,
+                                                centerPos.y + addFloor + MapConst.INCREASE_FLOOR_NUM
+                                            )
+                                        ) // 1,1
+                                        val vertex4 = PointGeometry(
+                                            MapPos(
+                                                centerPos.x + MapConst.INCREASE_LINE_NUM,
+                                                centerPos.y + addFloor
+                                            )
+                                        ) // 1,0
+
+                                        // polygon
+                                        polygon = PolygonGeometry(
+                                            MapPosVector().apply {
+                                                add(vertex1.pos)
+                                                add(vertex2.pos)
+                                                add(vertex3.pos)
+                                                add(vertex4.pos)
+                                            },
+                                        )
+
+                                        newFloorPolygon = Polygon(
+                                            polygon,
+                                            MapStyle.setPolygonStyle(
+                                                MapColor.TEAL, MapColor.TEAL, 2F
+                                            ),
+                                        )
+
+                                        newFloorPolygon.setMetaDataElement("SELECT", Variant("n"))
+
+                                        MapConst.PROPERTIES_VALUE_ARR.map {
+                                            newFloorPolygon.setMetaDataElement(it, Variant(""))
+                                        }
+
+                                        newElemetns.add(newFloorPolygon)
+                                        createPolygonArr.add(newFloorPolygon)
+
+                                        // 라인 수
+                                        for (j in 1 until lineNum) {
+
+                                            val add2 = j * MapConst.INCREASE_LINE_NUM
+
+                                            val vertex5 = PointGeometry(
+                                                MapPos(
+                                                    centerPos.x + add2,
+                                                    centerPos.y + addFloor
+                                                )
+                                            ) // 0,0
+                                            val vertex6 = PointGeometry(
+                                                MapPos(
+                                                    centerPos.x + add2,
+                                                    centerPos.y + addFloor + MapConst.INCREASE_FLOOR_NUM
+                                                )
+                                            ) // 0,1
+                                            val vertex7 = PointGeometry(
+                                                MapPos(
+                                                    centerPos.x + MapConst.INCREASE_LINE_NUM + add2,
+                                                    centerPos.y + addFloor + MapConst.INCREASE_FLOOR_NUM
+                                                )
+                                            ) // 1,1
+                                            val vertex8 = PointGeometry(
+                                                MapPos(
+                                                    centerPos.x + MapConst.INCREASE_LINE_NUM + add2,
+                                                    centerPos.y + addFloor
+                                                )
+                                            ) // 1,0
+
+                                            // polygon
+                                            polygon = PolygonGeometry(
+                                                MapPosVector().apply {
+                                                    add(vertex5.pos)
+                                                    add(vertex6.pos)
+                                                    add(vertex7.pos)
+                                                    add(vertex8.pos)
+                                                },
+                                            )
+
+                                            newLinePolygon = Polygon(
+                                                polygon,
+                                                MapStyle.setPolygonStyle(
+                                                    MapColor.TEAL, MapColor.TEAL, 2F
+                                                ),
+                                            )
+                                            newLinePolygon.setMetaDataElement(
+                                                "SELECT",
+                                                Variant("n")
+                                            )
+
+                                            MapConst.PROPERTIES_VALUE_ARR.map {
+                                                newLinePolygon.setMetaDataElement(it, Variant(""))
+                                            }
+
+                                            newElemetns.add(newLinePolygon)
+                                            createPolygonArr.add(newLinePolygon)
+
+                                        }
+                                    }
+
+                                    // 라인수
+                                    explodedViewSource.addAll(newElemetns)
+
+                                    dialog.dismiss()
+                                    editDialog.dismiss()
+
+                                    activity.vm.showSuccessMsg("신규 전개도 추가 완료")
+
+                                }
+
+                            }
+                        }
+
+                    }
                 )
             }
 
@@ -171,22 +395,76 @@ object BaseMap : MapViewModel() {
         val json: String
         var result: FeatureCollection? = null
         try {
-            val assetManager = context.resources.assets
-            val stream = assetManager.open(fileName)
+//            val assetManager = context.resources.assets
+//            val stream = assetManager.open(fileName)
+//            val size = stream.available()
+//            val buffer = ByteArray(size)
+//            stream.read(buffer)
+//            stream.close()
+//            json = String(buffer, charset("UTF-8"))
+//            //LogUtil.i("response data => $json")
+//            reader = GeoJSONGeometryReader()
+//            //reader.targetProjection = _proj
+//            result = reader.readFeatureCollection(json)
+
+            // todo: 내부 저장소 부르는걸로 변경
+            val file = File(context.filesDir, fileName)
+            val stream = file.inputStream()
             val size = stream.available()
             val buffer = ByteArray(size)
             stream.read(buffer)
             stream.close()
             json = String(buffer, charset("UTF-8"))
-            //LogUtil.i("response data => $json")
             reader = GeoJSONGeometryReader()
-            //reader.targetProjection = _proj
             result = reader.readFeatureCollection(json)
+
+            // todo: 이부분은 나중에 수정해야함
+            //createGeoJsonFile(result)
+
         } catch (e: Exception) {
             LogUtil.e(e.toString())
+            activity.vm.showErrorMsg("GeoJson 파일을 읽어오지 못했습니다.")
         }
         return result
     }
+
+    fun createFeatureCollection(polygonGeometries: MutableList<Polygon>): FeatureCollection {
+        val featureVector = FeatureVector()
+
+        polygonGeometries.forEach { geometry ->
+            val featureBuilder = FeatureBuilder()
+            featureBuilder.apply {
+                this.geometry = geometry.geometry as PolygonGeometry
+                setPropertyValue("propertyKey", Variant("propertyValue")) // 속성 추가
+            }
+
+            val feature: Feature = featureBuilder.buildFeature()
+            featureVector.add(feature)
+        }
+
+        return FeatureCollection(featureVector)
+    }
+
+    /**
+     * GeoJson 파일 만들기
+     */
+
+//    fun createGeoJsonFile(geoJsonFeature: FeatureCollection?) {
+//        try {
+//            val geoJSONGeometryWriter = GeoJSONGeometryWriter()
+//            val json = geoJSONGeometryWriter.writeFeatureCollection(geoJsonFeature)
+//            val fileName = "test.geojson"
+//            val file = File(context.filesDir, fileName)
+//            file.outputStream().use { outputStream ->
+//                outputStream.write(json.toByteArray())
+//            }
+//            LogUtil.i("json file => $file")
+//            LogUtil.i("json file => ${file.absolutePath}")
+//
+//        } catch (e: Exception) {
+//            LogUtil.e(e.toString())
+//        }
+//    }
 
     /**
      * 레이어 세팅
@@ -283,7 +561,7 @@ object BaseMap : MapViewModel() {
                     if (!getResult) throw BaseException("전개도 레이어 생성 실패")
                 }.fold(
                     onSuccess = {
-                        activity.vm.showLoadingBar(false); activity.vm.showSnackbarString(
+                        activity.vm.showLoadingBar(false); activity.vm.showSuccessMsg(
                         "초기화"
                     )
                     },
@@ -315,7 +593,7 @@ object BaseMap : MapViewModel() {
 
         }.onFailure {
             LogUtil.e("group status: $bool, $it")
-            activity.vm.showSnackbarString(it.toString())
+            activity.vm.showErrorMsg(it.toString())
         }
     }
 
@@ -401,8 +679,12 @@ object BaseMap : MapViewModel() {
                             getPropertiesStringValueArr(it)
                         }
 
-                        it.setMetaDataElement("SELECT", Variant("y"))
+                        if (it.setMetaDataElement("SELECT", Variant("y")) == null) {
+                            throw BaseException("선택된 폴리곤의 메타데이터 값이 존재하지 않습니다.")
+                        }
 
+
+                        it.setMetaDataElement("SELECT", Variant("y"))
                         selectPolygonArr.add(it)
 
                     }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><!-- res/layout/progress_dialog.xml -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:background="@android:color/transparent"
+        android:padding="24dp">
+
+    <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="center_horizontal"
+            android:background="@android:color/transparent"
+            android:gravity="center_horizontal">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:indeterminate="true"
+                app:indicatorColor="@color/md_theme_primary"
+                app:trackColor="@color/md_theme_secondary"
+                app:trackCornerRadius="2dp"
+                app:indicatorSize="48dp"
+                app:trackThickness="4dp"
+                app:indicatorDirectionCircular="clockwise" />
+
+
+        <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="데이터를 불러오는 중..."
+                android:layout_marginTop="16dp"
+                android:gravity="center" />
+    </LinearLayout>
+</FrameLayout>
+

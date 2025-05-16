@@ -1,0 +1,5 @@
+<!-- res/drawable/bg_circle_icon.xml -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+        android:shape="oval">
+    <solid android:color="#5E81F4" /> <!-- 메인 포인트 컬러 -->
+</shape>

@@ -3,6 +3,8 @@
     <string name="login_email_hint">imchic8@gmail.com\n</string>
     <string name="login_password_hint">비밀번호를 입력해주세요.</string>
     <string name="login_button">로그인</string>
+    <string name="item_icon_description">공동주택정보 이미지</string>
+    <string name="delete_all">전체삭제</string>
 
     <string-array name="hoChoice">
         <item>왼쪽</item>

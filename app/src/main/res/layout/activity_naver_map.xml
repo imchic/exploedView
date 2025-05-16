@@ -1,11 +1,96 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <com.naver.maps.map.MapView
+    <androidx.drawerlayout.widget.DrawerLayout
+            android:id="@+id/drawer_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/naverMapView"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintVertical_bias="1.0" />
+            android:fitsSystemWindows="true">
 
+        <!-- 메인 콘텐츠 -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+            <!-- 네이버 지도 -->
+            <com.naver.maps.map.MapView
+                    android:id="@+id/naverMapView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+            <!-- 툴바 -->
+            <com.google.android.material.appbar.MaterialToolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@color/md_theme_surface"
+                    app:title="@string/app_name"
+                    app:titleTextColor="@color/md_theme_onSurface"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+            <!-- 메뉴 버튼 -->
+            <ImageView
+                    android:id="@+id/img_layer"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="@drawable/rounded_button_background_confirm"
+                    android:src="@drawable/ic_baseline_menu_24"
+                    android:scaleType="centerInside"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/toolbar"
+                    app:tint="@color/white" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- 커스텀 드로어 -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/custom_drawer"
+                android:layout_width="350dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="start"
+                android:background="@color/md_theme_background"
+                android:fitsSystemWindows="true"
+                android:padding="16dp">
+
+            <!-- 드로어 아이콘 -->
+            <ImageView
+                    android:id="@+id/drawer_icon"
+                    android:layout_width="100dp"
+                    android:layout_height="80dp"
+                    android:layout_marginStart="16dp"
+                    android:src="@drawable/img_neobrix_logo"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- 전체 삭제 버튼 -->
+            <ImageView
+                    android:id="@+id/btn_delete_all"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_btn_delete_all"
+                    android:src="@drawable/ic_delete"
+                    android:padding="8dp"
+                    android:layout_marginEnd="16dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/drawer_recycler_view"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:padding="8dp"
+                    android:background="@color/md_theme_background"
+                    app:layout_constraintTop_toBottomOf="@id/drawer_icon"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.drawerlayout.widget.DrawerLayout>
 </layout>

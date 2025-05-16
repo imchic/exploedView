@@ -12,14 +12,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
-import com.example.exploedview.extension.repeatOnStarted
+import androidx.lifecycle.lifecycleScope
 import com.example.exploedview.map.BaseMap
 import com.example.exploedview.map.MapLayer
 import com.example.exploedview.util.LogUtil
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import com.google.android.material.snackbar.BaseTransientBottomBar.ANIMATION_MODE_SLIDE
 import com.google.android.material.snackbar.Snackbar
+import es.dmoral.toasty.Toasty
+import kotlinx.coroutines.launch
 
 
 @Suppress("IMPLICIT_CAST_TO_ANY")
@@ -62,7 +63,7 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
         binding = DataBindingUtil.setContentView(this, layoutId)
         binding.lifecycleOwner = this@BaseActivity
 
-        repeatOnStarted {
+        lifecycleScope.launch {
 //            vm.eventFlow.collect { event -> handleEvent(event) }
             vm.liveData.observe(this@BaseActivity) { event -> handleEvent(event) }
         }
@@ -94,17 +95,6 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
             LogUtil.i("theme => ${event.theme}")
         }
 
-        is BaseViewModel.Event.showLog -> {
-//            when(event.type){
-//                "d" ->  LogUtil.d(event.tag, event.text)
-//                "e" ->  LogUtil.e(event.tag, event.text)
-//                "i" ->  LogUtil.i(event.tag, event.text)
-//                "v" ->  LogUtil.v(event.tag, event.text)
-//                "w" ->  LogUtil.w(event.tag, event.text)
-//                else -> LogUtil.d(event.tag, event.text)
-//            }
-        }
-
         is BaseViewModel.Event.ShowLoadingBar -> {
 
             val bool = event.isShow
@@ -119,31 +109,31 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
 
         }
 
-        is BaseViewModel.Event.ShowSnackBar -> {
-            sb?.run {
-                setText(event.text)
-                animationMode = ANIMATION_MODE_SLIDE
-                duration = Snackbar.LENGTH_SHORT
-                show()
-            }
-        }
-
-        is BaseViewModel.Event.ShowSnackbarString -> {
-            sb?.run {
-                setText(event.text)
-                animationMode = ANIMATION_MODE_SLIDE
-                duration = Snackbar.LENGTH_SHORT
-                show()
-            }
-        }
-
-        is BaseViewModel.Event.ShowToast -> {
-            Toast.makeText(this, event.text, Toast.LENGTH_SHORT).show()
-        }
-
-        is BaseViewModel.Event.ShowToastString -> {
-            Toast.makeText(this, event.text, Toast.LENGTH_SHORT).show()
-        }
+//        is BaseViewModel.Event.ShowSnackBar -> {
+//            sb?.run {
+//                setText(event.text)
+//                animationMode = ANIMATION_MODE_SLIDE
+//                duration = Snackbar.LENGTH_SHORT
+//                show()
+//            }
+//        }
+//
+//        is BaseViewModel.Event.ShowSnackbarString -> {
+//            sb?.run {
+//                setText(event.text)
+//                animationMode = ANIMATION_MODE_SLIDE
+//                duration = Snackbar.LENGTH_SHORT
+//                show()
+//            }
+//        }
+//
+//        is BaseViewModel.Event.ShowToast -> {
+//            //Toast.makeText(this, event.text, Toast.LENGTH_SHORT).show()
+//        }
+//
+//        is BaseViewModel.Event.ShowToastString -> {
+//            Toasty.info(this, event.text).show()
+//        }
 
         is BaseViewModel.Event.ShowAlertDialog -> {
             MaterialAlertDialogBuilder(this)
@@ -160,11 +150,13 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
 
         is BaseViewModel.Event.ShowAlertSelectDialog -> {
             var pos = 0
+            val listSize = event.data.size
+
             MaterialAlertDialogBuilder(this)
                 .setTitle(event.data[0])
                 .setCancelable(false)
                 .setSingleChoiceItems(
-                    arrayOf(event.data[1], event.data[2], event.data[3], event.data[4]),
+                    event.data.subList(1, listSize).toTypedArray(),
                     0
                 ) { _, which -> pos = which }
                 .setPositiveButton("확인") { dialog, _ ->
@@ -176,8 +168,46 @@ abstract class BaseActivity<T : ViewDataBinding, R : BaseViewModel> : AppCompatA
                     }
                 }
                 .show()
+
+
+//            MaterialAlertDialogBuilder(this)
+//                .setTitle(event.data[0])
+//                .setCancelable(false)
+//                .setSingleChoiceItems(
+//                    arrayOf(event.data[1], event.data[2], event.data[3], event.data[4]),
+//                    0
+//                ) { _, which -> pos = which }
+//                .setPositiveButton("확인") { dialog, _ ->
+//                    dialog.dismiss()
+//                    try {
+//                        MapLayer.addHo(BaseMap.addHoDataSource, pos)
+//                    } catch (e: Exception) {
+//                        e.printStackTrace()
+//                    }
+//                }
+//                .show()
         }
 
+        is BaseViewModel.Event.ShowErrorMsg -> {
+            LogUtil.i("Error Msg => ${event.text}")
+            Toasty.error(this, event.text, Toast.LENGTH_LONG, true).show()
+        }
+
+        is BaseViewModel.Event.ShowInfoMsg -> {
+            LogUtil.i("Info Msg => ${event.text}")
+            Toasty.info(this, event.text).show()
+        }
+
+        is BaseViewModel.Event.ShowLog -> TODO()
+        is BaseViewModel.Event.ShowSuccessMsg -> {
+            LogUtil.i("Success Msg => ${event.text}")
+            Toasty.success(this, event.text).show()
+        }
+
+        is BaseViewModel.Event.ShowWarningMsg -> {
+            LogUtil.i("Warning Msg => ${event.text}")
+            Toasty.warning(this, event.text).show()
+        }
     }
 
     private fun initWidgetUI() {

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        android:foreground="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp">
+
+        <!-- 아이콘 -->
+        <ImageView
+                android:visibility="gone"
+                android:id="@+id/itemIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_build"
+                android:contentDescription="@string/item_icon_description"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- 텍스트 -->
+        <TextView
+                android:id="@+id/itemText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="리스트 아이템 텍스트"
+                android:textSize="16sp"
+                android:textColor="@android:color/black"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:layout_constraintStart_toEndOf="@id/itemIcon"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/deleteButton" />
+
+        <!-- 서브 텍스트 -->
+        <TextView
+                android:id="@+id/itemSubText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="4dp"
+                android:text="서브 텍스트"
+                android:textSize="14sp"
+                android:textColor="@android:color/darker_gray"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:layout_constraintStart_toEndOf="@id/itemIcon"
+                app:layout_constraintTop_toBottomOf="@id/itemText"
+                app:layout_constraintEnd_toStartOf="@id/deleteButton" />
+
+        <!-- 삭제 버튼 -->
+        <TextView
+                android:id="@+id/deleteButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="삭제"
+                android:textColor="#1D56BC"
+                android:background="@drawable/bg_btn_badge"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                app:layout_constraintTop_toTopOf="@+id/itemText"
+                app:layout_constraintBottom_toBottomOf="@+id/itemSubText"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:tint="@color/md_theme_primary" />
+
+        <!-- 유형 -->
+        <TextView
+                android:id="@+id/itemType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="유형"
+                android:textSize="14sp"
+                android:background="@drawable/bg_rounded_textview_2"
+                android:textColor="#5922D8"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintEnd_toStartOf="@+id/itemDongCnt"
+                app:layout_constraintHorizontal_chainStyle="packed"
+                app:layout_constraintBottom_toBottomOf="@+id/itemDongCnt" />
+
+        <!-- 동수 -->
+        <TextView
+                android:id="@+id/itemDongCnt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="동수"
+                android:textSize="14sp"
+                android:textColor="#FF8000"
+                android:background="@drawable/bg_rounded_textview"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:layout_marginStart="8dp"
+                app:layout_constraintStart_toEndOf="@+id/itemType"
+                app:layout_constraintBottom_toBottomOf="@+id/itemUnitCnt" />
+
+        <!-- 세대수 -->
+        <TextView
+                android:id="@+id/itemUnitCnt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:layout_marginStart="8dp"
+                android:text="세대수"
+                android:textSize="14sp"
+                android:textColor="#FF8000"
+                android:background="@drawable/bg_rounded_textview"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                app:layout_constraintTop_toBottomOf="@id/itemSubText"
+                app:layout_constraintStart_toEndOf="@+id/itemDongCnt"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

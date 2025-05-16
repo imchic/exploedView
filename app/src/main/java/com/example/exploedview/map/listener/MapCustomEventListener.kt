@@ -10,7 +10,11 @@ import com.carto.ui.ClickType
 import com.carto.ui.MapClickInfo
 import com.carto.ui.MapEventListener
 import com.carto.ui.MapView
-import com.carto.vectorelements.*
+import com.carto.vectorelements.BalloonPopup
+import com.carto.vectorelements.Line
+import com.carto.vectorelements.Point
+import com.carto.vectorelements.Polygon
+import com.carto.vectorelements.VectorElementVector
 import com.example.exploedview.base.BaseException
 import com.example.exploedview.map.BaseMap
 import com.example.exploedview.map.MapLayerName
@@ -19,7 +23,9 @@ import com.example.exploedview.util.LogUtil
 import com.example.exploedview.util.MapColor
 
 class MapCustomEventListener(
-    private val _mapView: MapView, private var _source: LocalVectorDataSource?, private val _posArr: MutableList<MapPos>?
+    private val _mapView: MapView,
+    private var _source: LocalVectorDataSource?,
+    private val _posArr: MutableList<MapPos>?,
 ) : MapEventListener() {
 
     private var _popup: BalloonPopup? = null
@@ -43,7 +49,8 @@ class MapCustomEventListener(
                     MapLayerName.GROUP.value,
                     MapLayerName.EXPLODED_VIEW.value,
                     MapLayerName.ADD_FLOOR.value,
-                    MapLayerName.ADD_LINE.value -> {
+                    MapLayerName.ADD_LINE.value,
+                        -> {
                         _targetLayerArr?.add(_mapView.layers.get(i))
                     }
 
@@ -60,7 +67,8 @@ class MapCustomEventListener(
 
             it.run {
                 if (it.getMetaDataElement("name").string == MapLayerName.GROUP.value) {
-                    vectorEditEventListener = VectorElementEditEventListener(BaseMap.containsDataSource)
+                    vectorEditEventListener =
+                        VectorElementEditEventListener(BaseMap.containsDataSource)
                 }
                 vectorElementEventListener = BaseMap.selectListener
 
@@ -96,7 +104,7 @@ class MapCustomEventListener(
 //                ClickType.CLICK_TYPE_LONG -> i("Long map click!")
 //                ClickType.CLICK_TYPE_DOUBLE -> i("Double map click!")
 //                ClickType.CLICK_TYPE_DUAL -> i("Dual map click!")
-                else -> BaseMap.activity.vm.showSnackbarString("유효하지 않는 이벤트 발생")
+                else -> BaseMap.activity.vm.showErrorMsg("유효하지 않는 이벤트 발생")
             }
 
             if (_popup != null) {
@@ -117,7 +125,8 @@ class MapCustomEventListener(
                         _pointSymbol = Point(pos, MapStyle.setPointStyle(MapColor.MAGENTA, 13F))
                         element.add(_pointSymbol)
 
-                        _popup = BalloonPopup(_pointSymbol?.geometry?.centerPos, popupStyle, "선 3개 이상부터 가능합니다.",
+                        _popup = BalloonPopup(
+                            _pointSymbol?.geometry?.centerPos, popupStyle, "선 3개 이상부터 가능합니다.",
                             clickPosCntTxt
                         )
                         element.add(_popup)
@@ -136,7 +145,12 @@ class MapCustomEventListener(
                     )
                     element.add(_lineSymbol)
 
-                    _popup = BalloonPopup(_lineSymbol?.geometry?.centerPos, popupStyle, "선 3개이상부터 가능합니다.", clickPosCntTxt)
+                    _popup = BalloonPopup(
+                        _lineSymbol?.geometry?.centerPos,
+                        popupStyle,
+                        "선 3개이상부터 가능합니다.",
+                        clickPosCntTxt
+                    )
                     element.add(_popup)
                 }
 
@@ -154,7 +168,12 @@ class MapCustomEventListener(
 //                    i("click create polygon => $posVector")
                     element.add(_polygonSymbol)
 
-                    _popup = BalloonPopup(_polygonSymbol?.geometry?.centerPos, popupStyle, "꼭지점을 이용하여 영역을 지정해주세요.", clickPosCntTxt)
+                    _popup = BalloonPopup(
+                        _polygonSymbol?.geometry?.centerPos,
+                        popupStyle,
+                        "꼭지점을 이용하여 영역을 지정해주세요.",
+                        clickPosCntTxt
+                    )
                     element.add(_popup)
                 }
 
